@@ -21,7 +21,7 @@ on:
         description: renameTo
       threads:
         type: number
-        default: 1
+        default: 2
         required: true
 #      persist:
 #        default: true
@@ -49,7 +49,9 @@ jobs:
       - name: cache.pip()
         uses: actions/cache@v3
         with:
-          path: ~/.local/lib/python*/
+          path:
+            - ~/.local/lib/python*/
+            - ~/.cache/pip
           key: pipUser-onecomic-ubuntu-latest
       - name: pip()
         run: pip install -U --user onecomic
