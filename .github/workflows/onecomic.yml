@@ -70,13 +70,16 @@ jobs:
             dirname="$(dirname -- "$dir")"
             basename="$(basename -- "$dir")"
             basetagname="$(printf '%s\n' "$basename" | sed -Ee 's|[/. ~^?*]|-|g;s|@|()|g;s%\[%(%g;s%\]%)%g' | sed -Ee 's%^-+%%')"
+              git pull --tags origin nci
               if [[ "$(git tag --list -- "$basetagname" | wc -c)" == 0 ]]; then
                 echo requireCreateATag=1 >> $GITHUB_ENV
               fi
             echo basetagname=$basetagname >> $GITHUB_ENV
             finalFilename="$basename [$resScheme.$resId]"
+            relsuf="-$resScheme.$resId"
             if [[ -n "$resChaps" ]]; then
               finalFilename+="[ch#$resChaps]"
+              relsuf+=".ch$resChaps"
             fi
             if [[ -n "$resRename" ]];then finalFilename="$resRename";fi
             finalFilename="${finalFilename//\`/}"
@@ -88,9 +91,10 @@ jobs:
           pigz > ../../output/file.tgz
           md5inhex="$(md5sum ../../output/file.tgz | sed -e 's%  .*%%')"
           md5inb32="$(printf '%s\n' "$md5inhex" | xxd -ps -r | base32 -w0 | sed -Ee 's%=+$%%g;s%([A-Z])%\L&%g')"
-          mv -vT -- ../../output/{file,${md5inb32}}.tgz
+          mv -vT -- ../../output/{file,${md5inb32}${relsuf}}.tgz
           echo md5inb32=$md5inb32 >> $GITHUB_ENV
           echo finalFilename=$finalFilename >> $GITHUB_ENV
+          echo relsuf=$relsuf >> $GITHUB_ENV
 #      - name: upload.volatile()
 #        if: ${{ ! inputs.persist }}
 #        uses: actions/upload-artifact@v3
@@ -112,8 +116,8 @@ jobs:
         with:
           prerelease: true
           body: |
-            - [`${{ env.finalFilename }}`](${{ env.md5inb32 }}.tgz) (${{ env.timestamp }})
+            - [`${{ env.finalFilename }}`](${{ env.md5inb32 }}${{ env.relsuf }}.tgz) (${{ env.timestamp }})
           append_body: true
-          files: output/${{ env.md5inb32 }}.tgz
+          files: output/${{ env.md5inb32 }}${{ env.relsuf }}.tgz
           tag_name: ${{ env.basetagname }}
           fail_on_unmatched_files: true
