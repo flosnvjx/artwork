@@ -90,10 +90,10 @@ jobs:
           find . -type f -print0 | sed -ze 's%^\./%%' | \
           LC_ALL=C sort -zt/ -k2,2 -k3g,3 | \
           cpio -o0cC1R+0:+0 --reproducible --quiet | \
-          pigz > ../../output/file.tgz
-          md5inhex="$(md5sum ../../output/file.tgz | sed -e 's%  .*%%')"
+          zstd --ultra -T0 -21 --zstd=strat=9,wlog=26,hlog=30,clog=30,slog=25,mml=7,tlen=128 -o ../../output/file.tzst
+          md5inhex="$(md5sum ../../output/file.tzst | sed -e 's%  .*%%')"
           md5inb32="$(printf '%s\n' "$md5inhex" | xxd -ps -r | base32 -w0 | sed -Ee 's%=+$%%g;s%([A-Z])%\L&%g')"
-          mv -vT -- ../../output/{file,${md5inb32}${relsuf}}.tgz
+          mv -vT -- ../../output/{file,${md5inb32}${relsuf}}.tzst
           echo md5inb32=$md5inb32 >> $GITHUB_ENV
           echo finalFilename=$finalFilename >> $GITHUB_ENV
           echo relsuf=$relsuf >> $GITHUB_ENV
@@ -101,8 +101,8 @@ jobs:
 #        if: ${{ ! inputs.persist }}
 #        uses: actions/upload-artifact@v3
 #        with:
-#          path: output/${{ env.md5inb32 }}.tgz
-#          name: ${{ env.md5inb32 }}.tgz
+#          path: output/${{ env.md5inb32 }}.tzst
+#          name: ${{ env.md5inb32 }}.tzst
 #          if-no-files-found: error
       - name: create.tag(${{ env.basetagname }})
 #        if: ${{ inputs.persist && env.requireCreateATag == 1 }}
@@ -118,8 +118,8 @@ jobs:
         with:
           prerelease: true
           body: |
-            - [`${{ env.finalFilename }}`](${{ env.md5inb32 }}${{ env.relsuf }}.tgz) (${{ env.timestamp }})
+            - [`${{ env.finalFilename }}`](${{ env.md5inb32 }}${{ env.relsuf }}.tzst) (${{ env.timestamp }})
           append_body: true
-          files: output/${{ env.md5inb32 }}${{ env.relsuf }}.tgz
+          files: output/${{ env.md5inb32 }}${{ env.relsuf }}.tzst
           tag_name: ${{ env.basetagname }}
           fail_on_unmatched_files: true
