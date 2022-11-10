@@ -50,12 +50,12 @@ jobs:
           declare +x -a resIdsArr=($(printf '%s' "$resIds" | sed -sEe 's%[,; ]+%\n%g' | grep -Ee '^[0-9]+$'))
           declare +x walkId; for walkId in "${resIdsArr[@]}"; do
             sleep 1.$RANDOM
-            if NODE_TLS_REJECT_UNAUTHORIZED=0 node cejscrawler/comic.cmn-Hans-CN/u17.js "$walkId" archive_images=false one_by_one max_error_retry=1
+            if NODE_TLS_REJECT_UNAUTHORIZED=0 node cejscrawler/comic.cmn-Hans-CN/u17.js "$walkId" archive_images=false max_error_retry=1
             then
               echo "$walkId" >> "$resScheme"/ok.lst
             else
               echo "$walkId" >> "$resScheme"/err.lst
             fi
           done
-          ls -lR dl
-          find dl -name '*.json' | xargs -rL1 jq -r .
+          ls -lR "$resScheme"
+          find "$resScheme" -name '*.json' | xargs -rL1 jq -r .
