@@ -48,7 +48,7 @@ jobs:
         run: |
           mkdir -p "$resScheme"
           declare +x -a resIdsArr=($(printf '%s' "$resIds" | sed -sEe 's%[,; ]+%\n%g' | grep -Ee '^[0-9]+$'))
-          xargs -rI'$walkId' -P2 bash -c '
+          for walkId in "${resIdsArr[@]}"; do
             sleep 1.$RANDOM
             if NODE_TLS_REJECT_UNAUTHORIZED=0 node cejscrawler/comic.cmn-Hans-CN/u17.js "$walkId" archive_images=false
             then
@@ -56,6 +56,6 @@ jobs:
             else
               echo "$walkId" >> "$resScheme"/err.lst
             fi
-          '
+          done
           ls -lR "$resScheme"
           find "$resScheme" -name '*.json' -print0 | xargs -0rL1 jq -r .
