@@ -50,7 +50,7 @@ jobs:
           declare +x -a resIdsArr=($(printf '%s' "$resIds" | sed -sEe 's%[,; ]+%\n%g' | grep -Ee '^[0-9]+$'))
           declare +x walkId; for walkId in "${resIdsArr[@]}"; do
             sleep $(shuf -i 0-3|head -n1).$RANDOM
-            if env -v NODE_TLS_REJECT_UNAUTHORIZED=0 node cejscrawler/comic.cmn-Hans-CN/u17.js "$walkId" archive_images=false
+            if NODE_TLS_REJECT_UNAUTHORIZED=0 node cejscrawler/comic.cmn-Hans-CN/u17.js "$walkId" archive_images=false one_by_one max_error_retry=1
             then
               echo "$walkId" >> dl/"$resScheme"/ok.lst
             else
