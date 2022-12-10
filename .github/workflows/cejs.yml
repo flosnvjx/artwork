@@ -47,18 +47,17 @@ jobs:
       - name: cejscrawler.${{ inputs.scheme }}(${{ inputs.ids }})
         run: |
           set -x
-          ls -1l
+          ls -l1 cejscrawler
           mkdir -p dl/"$resScheme"
           printf '%s' "$resIds" | {
             sed -sEe 's%[,; ]+%\n%g' || true
-          } | grep -e '^[0-9]+$' | \
-          xargs -rI'@@' -P3 bash -xc '
-          sleep $(shuf -i 0-3|head -n1)
-          if NODE_TLS_REJECT_UNAUTHORIZED=0 node cejscrawler/comic.cmn-Hans-CN/u17.js {} archive_images=false preserve_work_page min_length=1024 max_error_retry=1 one_by_one chapter_time_interval=3s; then
+          } | grep -e '^[0-9]+$'
+          #xargs -rI'@@' -P3 bash -xc '
+          true sleep $(shuf -i 0-3|head -n1)
+          true if NODE_TLS_REJECT_UNAUTHORIZED=0 node cejscrawler/comic.cmn-Hans-CN/u17.js {} archive_images=false preserve_work_page min_length=1024 max_error_retry=1 one_by_one chapter_time_interval=3s; then
             echo @@ >> dl/$resScheme/ok.lst
-          else
+          true else
             echo @@ >> dl/$resScheme/err.lst
-          fi
-          '
+          true fi
           ls -lR dl
           find dl -name '*.json' | xargs -rL1 jq -r .
