@@ -45,8 +45,16 @@ jobs:
           fi
       - name: cejscrawler.${{ inputs.scheme }}(${{ inputs.ids }})
         run: |
-          printf '%s' "$resIds" | sed -zsEe 's%[,; ]+%\n%g' -e '/^$/d' -e '$a\\' > "$resScheme".txt
-          node cejscrawler/comic.cmn-Hans-CN/u17.js l="$resScheme".txt
-          ls -R ../dl
-          ls -R dl
-          ls -R u17
+          mkdir dl/"$resScheme"
+          printf '%s' "$resIds" | sed -sEe 's%[,; ]+%\n%g' | grep -e '^[0-9]+$' | \
+          xargs -rI'{}' -P3 | bash -c "
+          if NODE_TLS_REJECT_UNAUTHORIZED=0 node cejscrawler/comic.cmn-Hans-CN/u17.js {} archive_images=false preserve_work_page min_length=1024 max_error_retry=1 one_by_one chapter_time_interval=3s; then
+            echo {} >> dl/$resScheme/ok.lst
+            sleep $(shuf -i 0-3)
+          else
+            echo {} >> dl/$resScheme/err.lst
+            sleep $(shuf -i 0-3)
+          fi
+          "
+          ls -lR dl
+          find dl -name '*.json' | xargs -rL1 jq -r .
