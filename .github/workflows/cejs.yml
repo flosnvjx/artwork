@@ -12,12 +12,12 @@ on:
           - u17
         required: true
       storage:
-        default: '189'
+        default: 189
         required: true
         type: choice
         options:
-          - '189'
-          - 'releases'
+          - 189
+          - releases
 defaults:
   run:
     shell: bash
@@ -36,7 +36,8 @@ jobs:
           ref: flos
           path: cejscrawler
       - name: apt()
-        run: DEBIAN_FRONTEND=noninteractive sudo apt-get install -qq cpio bsdtar pixz tree </dev/null >/dev/null
+        run: |
+          DEBIAN_FRONTEND=noninteractive sudo apt-get install -qq cpio bsdtar pixz tree </dev/null >/dev/null
       - name: cache.npm(cejscrawler)
         uses: actions/cache@v3
         with:
