@@ -25,6 +25,7 @@ env:
   resScheme: ${{ inputs.scheme }}
   resStor: ${{ inputs.storage }}
   cejsVer: 4.5.4
+  cejsEpoch: 0
 jobs:
   in-one-go:
     runs-on: ubuntu-latest
@@ -36,7 +37,7 @@ jobs:
         uses: actions/cache@v3
         with:
           path: cejscrawler
-          key: node_modules-cejscrawler-v${{ env.cejsVer }}-ubuntu-latest
+          key: node_modules-cejscrawler-v${{ env.cejsVer }}_${{ env.cejsEpoch }}-ubuntu-latest
       - name: npm(cejscrawler)
         run: |
           if ! [[ -d cejscrawler ]]; then
@@ -45,15 +46,14 @@ jobs:
           fi
       - name: cejscrawler.${{ inputs.scheme }}(${{ inputs.ids }})
         run: |
-          mkdir dl/"$resScheme"
+          mkdir -p dl/"$resScheme"
           printf '%s' "$resIds" | sed -sEe 's%[,; ]+%\n%g' | grep -e '^[0-9]+$' | \
-          xargs -rI'{}' -P3 | bash -c "
+          xargs -rI'{}' -P3 bash -c "
+          sleep $(shuf -i 0-3|head -n1)
           if NODE_TLS_REJECT_UNAUTHORIZED=0 node cejscrawler/comic.cmn-Hans-CN/u17.js {} archive_images=false preserve_work_page min_length=1024 max_error_retry=1 one_by_one chapter_time_interval=3s; then
             echo {} >> dl/$resScheme/ok.lst
-            sleep $(shuf -i 0-3)
           else
             echo {} >> dl/$resScheme/err.lst
-            sleep $(shuf -i 0-3)
           fi
           "
           ls -lR dl
