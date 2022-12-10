@@ -49,7 +49,8 @@ jobs:
           mkdir -p dl/"$resScheme"
           printf '%s' "$resIds" | sed -sEe 's%[,; ]+%\n%g' | grep -Ee '^[0-9]+$' | xargs -rI'@@' bash -c '
           sleep $(shuf -i 0-3|head -n1).$RANDOM
-          if env -v NODE_TLS_REJECT_UNAUTHORIZED=0 node cejscrawler/comic.cmn-Hans-CN/u17.js @@ archive_images=false preserve_work_page min_length=1024 max_error_retry=1 one_by_one chapter_time_interval=3s; then
+          if env -v NODE_TLS_REJECT_UNAUTHORIZED=0 node cejscrawler/comic.cmn-Hans-CN/u17.js @@ archive_images=false preserve_work_page max_error_retry=2
+          then
             echo @@ >> dl/"$resScheme"/ok.lst
           else
             echo @@ >> dl/"$resScheme"/err.lst
