@@ -1,23 +1,22 @@
 name: cejs
-run-name: ${{ inputs.scheme }}: ${{ inputs.ids }}
 on:
   workflow_dispatch:
     inputs:
       ids:
         required: true
       scheme:
-        default: u17
         type: choice
+        required: true
         options:
           - u17
-        required: true
+        default: u17
       storage:
-        default: 189
-        required: true
         type: choice
+        required: true
         options:
-          - 189
+          - cloud189
           - releases
+        default: cloud189
 defaults:
   run:
     shell: bash
