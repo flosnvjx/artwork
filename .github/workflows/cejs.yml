@@ -1,0 +1,56 @@
+name: cejs
+run-name: ${{ inputs.scheme }}: ${{ inputs.ids }}
+on:
+  workflow_dispatch:
+    inputs:
+      ids:
+        required: true
+      scheme:
+        default: u17
+        type: choice
+        options:
+          - u17
+        required: true
+      storage:
+        default: '189'
+        required: true
+        type: choice
+        options:
+          - '189'
+          - 'releases'
+defaults:
+  run:
+    shell: bash
+env:
+  resIds: ${{ inputs.ids }}
+  resScheme: ${{ inputs.scheme }}
+  resStor: ${{ inputs.storage }}
+  cejsVer: 4.5.4
+jobs:
+  in-one-go:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          repository: flosnvjx/work_crawler
+          ref: flos
+          path: cejscrawler
+      - name: apt()
+        run: DEBIAN_FRONTEND=noninteractive sudo apt-get install -qq cpio bsdtar pixz tree </dev/null >/dev/null
+      - name: cache.npm(cejscrawler)
+        uses: actions/cache@v3
+        with:
+          path: cejscrawler/node_modules
+          key: node_modules-cejscrawler-v${{ env.cejsVer }}-ubuntu-latest
+      - name: npm(cejscrawler)
+        run: |
+          if ! [[ -d cejscrawler/node_modules ]]; then
+            env -C cejscrawler -- npm install cejs@"${cejsVer}"
+          fi
+      - name: cejscrawler.${{ inputs.scheme }}(${{ inputs.ids }})
+        run: |
+          printf '%s' "$resIds" | sed -zEe 's%[,; ]+%\n%g' > "$resScheme".txt
+          node cejscrawler/comic.cmn-Hans-CN/u17.js l="$resScheme".txt
+          ls -R ../dl
+          ls -R dl
+          ls -R u17
