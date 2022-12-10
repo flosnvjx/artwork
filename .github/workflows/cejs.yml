@@ -45,7 +45,7 @@ jobs:
           fi
       - name: cejscrawler.${{ inputs.scheme }}(${{ inputs.ids }})
         run: |
-          printf '%s' "$resIds" | sed -zsEe 's%[,; ]+%\n%g' -e '/^$/d'-e '$a\\' > "$resScheme".txt
+          printf '%s' "$resIds" | sed -zsEe 's%[,; ]+%\n%g' -e '/^$/d' -e '$a\\' > "$resScheme".txt
           node cejscrawler/comic.cmn-Hans-CN/u17.js l="$resScheme".txt
           ls -R ../dl
           ls -R dl
