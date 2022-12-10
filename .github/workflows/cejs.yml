@@ -24,7 +24,7 @@ env:
   resIds: ${{ inputs.ids }}
   resScheme: ${{ inputs.scheme }}
   resStor: ${{ inputs.storage }}
-  cejsVer: 4.5.4
+  cejsVer: latest
   cejsEpoch: 1
 jobs:
   in-one-go:
@@ -42,19 +42,20 @@ jobs:
         run: |
           if ! [[ -d cejscrawler ]]; then
             git clone -qb flos --depth 1 --single-branch https://github.com/flosnvjx/work_crawler.git/ cejscrawler
-            env -C cejscrawler -- npm install --silent cejs@"${cejsVer}"
+            env -C cejscrawler -- npm install --silent cejs
           fi
       - name: cejscrawler.${{ inputs.scheme }}(${{ inputs.ids }})
         run: |
           mkdir -p dl/"$resScheme"
-          printf '%s' "$resIds" | sed -sEe 's%[,; ]+%\n%g' | grep -Ee '^[0-9]+$' | xargs -rI'@@' bash -c '
-          sleep $(shuf -i 0-3|head -n1).$RANDOM
-          if env -v NODE_TLS_REJECT_UNAUTHORIZED=0 node cejscrawler/comic.cmn-Hans-CN/u17.js @@ archive_images=false preserve_work_page max_error_retry=2
-          then
-            echo @@ >> dl/"$resScheme"/ok.lst
-          else
-            echo @@ >> dl/"$resScheme"/err.lst
-          fi
-          '
+          declare +x -a resIdsArr=($(printf '%s' "$resIds" | sed -sEe 's%[,; ]+%\n%g' | grep -Ee '^[0-9]+$'))
+          declare +x walkId; for walkId in "${resIdsArr[@]}"; do
+            sleep $(shuf -i 0-3|head -n1).$RANDOM
+            if env -v NODE_TLS_REJECT_UNAUTHORIZED=0 node cejscrawler/comic.cmn-Hans-CN/u17.js "$walkId" archive_images=false
+            then
+              echo "$walkId" >> dl/"$resScheme"/ok.lst
+            else
+              echo "$walkId" >> dl/"$resScheme"/err.lst
+            fi
+          done
           ls -lR dl
           find dl -name '*.json' | xargs -rL1 jq -r .
