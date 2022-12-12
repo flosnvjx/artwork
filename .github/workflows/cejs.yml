@@ -32,6 +32,7 @@ env:
   cejsEpoch: 1
 jobs:
   in-one-go:
+    environment: cloud189
     runs-on: ubuntu-22.10
     steps:
       - name: cache.npm(cejscrawler)
@@ -101,14 +102,14 @@ jobs:
           fi
       - name: cloud189()
         if: inputs.storage == 'cloud189'
-        env:                                                              _CLOUD189_CONFIGTEXT: ${{ secrets._CLOUD189_CONFIGTEXT }}
+        env:                                                              CLOUD189_CONFIGTEXT: ${{ secrets.CLOUD189_CONFIGTEXT }}
         run: |
           declare +x f=
 
           mkdir -p ~/.config/cloud189
           mkfifo ~/.config/cloud189/config.json
           cloud189() {
-            printf %s "$_CLOUD189_CONFIGTEXT" | jq -cr . | tee > ~/.config/cloud189/config.json
+            printf %s "$CLOUD189_CONFIGTEXT" | jq -cr . | tee > ~/.config/cloud189/config.json
             ~/go/bin/cloud189 "${@}"
           }
           upload189() {
