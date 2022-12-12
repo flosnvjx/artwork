@@ -78,7 +78,7 @@ jobs:
 
           cd '(upqueue)'
           find -maxdepth 1 -type f -name '*.cpio' -print0 | \
-          time xargs -0r zstdmt --ultra -14 --rm --
+          time xargs -0r zstdmt -q --ultra -14 --rm --
 
           resAnnot="$(printf %s "$resAnnot" | sed -ze 's%[\n]% %g' | sed -Ee 's|[/. ~^?*]|-|g;s|@|()|g;s%\[%(%g;s%\]%)%g' | sed -Ee 's%^-+%%')"
           if [[ -z "$resAnnot" ]]; then
@@ -91,13 +91,13 @@ jobs:
             fi
           fi
           if [[ "$resStor" == release ]]; then
-            7za a -tzip -mx=0 -sae -sdel -- "$resAnnot.dataset.zz" '*.cpio.zst'
+            7za a -tzip -mx=0 -bsp0 -bso0 -sae -sdel -- "$resAnnot.dataset.zz" '*.cpio.zst'
           fi
           if [[ ${#okIdsArr[@]} -gt 0 ]]; then
-            printf '%s\n' "${okIdsArr[@]}" | zstd -o "$resAnnot".cejs-ok.log.zst
+            printf '%s\n' "${okIdsArr[@]}" | zstd -qo "$resAnnot".cejs-ok.log.zst
           fi
           if [[ ${#errIdsArr[@]} -gt 0 ]]; then
-            printf '%s\n' "${errIdsArr[@]}" | zstd -o "$resAnnot".cejs-err.log.zst
+            printf '%s\n' "${errIdsArr[@]}" | zstd -qo "$resAnnot".cejs-err.log.zst
           fi
       - name: cache.go(cloud189)
         if: inputs.storage == 'cloud189'
@@ -155,11 +155,16 @@ jobs:
           fi
       - name: create.release(${{ inputs.scheme }}/${{ env.resAnnot }})
         if: ${{ env.requireCreateTag == 1 }}
-        run: GH_TOKEN=${{ github.token }} gh release create "$resScheme/$resAnnot" -p --target 63da79a3e51fc466a4a9f5629c8f125bb87bc653 -R "$GITHUB_REPOSITORY"
+        env:
+          GH_TOKEN=${{ github.token }}
+        run: |
+          gh release create "$resScheme/$resAnnot" -p --target 63da79a3e51fc466a4a9f5629c8f125bb87bc653 -R "$GITHUB_REPOSITORY"
       - name: upload.release(${{ inputs.scheme }})
         if: inputs.storage == 'release'
+        env:
+          GH_TOKEN=${{ github.token }}
         run: |
           find "$resScheme/(upqueue)" \
             -name "*.cejs-*.log.zst" -o \
             -name "*.dataset.zz" -print0 \
-           | GH_TOKEN=${{ github.token }} xargs -0rI@@ gh release upload "$resScheme/$resAnnot" @@ -R "$GITHUB_REPOSITORY"
+           | xargs -0rI@@ gh release upload "$resScheme/$resAnnot" @@ -R "$GITHUB_REPOSITORY"
