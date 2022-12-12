@@ -18,7 +18,7 @@ on:
           - releases
         default: cloud189
       annot:
-run-name: cejs(${{ inputs.annot }})
+run-name: ${{ inputs.annot }}
 defaults:
   run:
     shell: bash
