@@ -155,7 +155,7 @@ jobs:
           fi
       - name: create.tag(${{ inputs.scheme }}/${{ env.resAnnot }})
         if: ${{ env.requireCreateTag == 1 }}
-        run: gh release create "$resScheme/$resAnnot" -p --target 63da79a3e51fc466a4a9f5629c8f125bb87bc653 -R "$GITHUB_REPOSITORY"
+        run: GH_TOKEN=${{ github.token }} gh release create "$resScheme/$resAnnot" -p --target 63da79a3e51fc466a4a9f5629c8f125bb87bc653 -R "$GITHUB_REPOSITORY"
       - name: release(${{ inputs.scheme }})
         if: inputs.storage == 'release'
         uses: softprops/action-gh-release@v1
