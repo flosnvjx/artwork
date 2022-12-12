@@ -32,8 +32,9 @@ env:
   cejsEpoch: 1
 jobs:
   in-one-go:
-    environment: cloud189
-    runs-on: ubuntu-22.10
+    environment:
+      name: cloud189
+    runs-on: ubuntu-latest
     steps:
       - name: cache.npm(cejscrawler)
         uses: actions/cache@v3
@@ -74,7 +75,7 @@ jobs:
 
           cd '(upqueue)'
           find -maxdepth 1 -type f -name '*.cpio' -print0 | \
-          time xargs -0r zstdmt --ultra -21 --zstd=strat=9,wlog=26,hlog=30,clog=30,slog=25,mml=7,tlen=128 --rm --
+          time xargs -0r zstdmt --ultra -14 --rm --
 
           resAnnot="$(printf %s "$resAnnot"|sed -ze 's%[\n /]%%g')
           if [[ -z "$resAnnot" ]]; then
