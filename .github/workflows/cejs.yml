@@ -79,7 +79,7 @@ jobs:
           find -maxdepth 1 -type f -name '*.cpio' -print0 | \
           time xargs -0r zstdmt --ultra -14 --rm --
 
-          resAnnot="$(printf %s "$resAnnot"|sed -ze 's%[\n /]%%g')
+          resAnnot="$(printf %s "$resAnnot"|sed -ze 's%[\n /]%%g')"
           if [[ -z "$resAnnot" ]]; then
             resAnnot="$(TZ=Asia/Shanghai date +%Y%m%d%H%M%S)"
           fi
