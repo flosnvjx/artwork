@@ -74,7 +74,7 @@ jobs:
 
           cd '(upqueue)'
           find -maxdepth 1 -type f -name '*.cpio' -print0 | \
-          time xargs -0 zstdmt --ultra -21 --zstd=strat=9,wlog=26,hlog=30,clog=30,slog=25,mml=7,tlen=128 --rm --
+          time xargs -0r zstdmt --ultra -21 --zstd=strat=9,wlog=26,hlog=30,clog=30,slog=25,mml=7,tlen=128 --rm --
 
           resAnnot="$(printf %s "$resAnnot"|sed -ze 's%[\n /]%%g')
           if [[ -z "$resAnnot" ]]; then
