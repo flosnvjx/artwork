@@ -15,8 +15,8 @@ on:
         required: true
         options:
           - cloud189
-          - releases
-        default: cloud189
+          - release
+        default: release
       annot:
 run-name: ${{ inputs.annot }}
 defaults:
@@ -36,18 +36,18 @@ jobs:
       name: cloud189
     runs-on: ubuntu-latest
     steps:
-      - name: cache.npm(cejscrawler)
+      - name: cache.npm(cejs_c)
         uses: actions/cache@v3
         with:
-          path: cejscrawler
-          key: node_modules-cejscrawler-${{ env.cejsVer }}_${{ env.cejsEpoch }}
-      - name: npm(cejscrawler)
+          path: cejs_c
+          key: node_modules-cejs_c-${{ env.cejsVer }}_${{ env.cejsEpoch }}
+      - name: npm(cejs_c)
         run: |
-          if ! [[ -d cejscrawler ]]; then
-            git clone -qb flos --depth 1 --single-branch https://github.com/flosnvjx/work_crawler.git/ cejscrawler
-            env -C cejscrawler -- npm install --silent cejs
+          if ! [[ -d cejs_c ]]; then
+            git clone -qb flos --depth 1 --single-branch https://github.com/flosnvjx/work_crawler.git/ cejs_c
+            env -C cejs_c -- npm install --silent cejs
           fi
-      - name: cejscrawler.${{ inputs.scheme }}(${{ inputs.ids }})
+      - name: cejs_c.${{ inputs.scheme }}(${{ inputs.ids }})
         run: |
           set -x
           mkdir -p "$resScheme/(upqueue)"
@@ -57,7 +57,7 @@ jobs:
 
           for walkId in "${resIdsArr[@]}"; do
             sleep 1.$RANDOM
-            if NODE_TLS_REJECT_UNAUTHORIZED=0 node cejscrawler/comic.*/"$resScheme".js "$walkId" archive_images=false
+            if NODE_TLS_REJECT_UNAUTHORIZED=0 node cejs_c/comic.*/"$resScheme".js "$walkId" archive_images=false
             then
               okIdsArr+=("$walkId")
             else
@@ -85,7 +85,9 @@ jobs:
             resAnnot="$(TZ=Asia/Shanghai date +%Y%m%d%H%M%S)"
           fi
           echo resAnnot=$resAnnot >> $GITHUB_ENV
-          #7za a -tzip -mx=0 -sae -sdel -- "$resAnnot.zz" '*.cpio.zst'
+          if [[ "$resStor" == release ]]; then
+            7za a -tzip -mx=0 -sae -sdel -- "$resAnnot.dataset.zz" '*.cpio.zst'
+          fi
           if [[ ${#okIdsArr[@]} -gt 0 ]]; then
             printf '%s\n' "${okIdsArr[@]}" | zstd -o "$resAnnot".cejs-ok.log.zst
           fi
@@ -109,7 +111,6 @@ jobs:
         env:
           CLOUD189_CONFIGTEXT: ${{ secrets.CLOUD189_CONFIGTEXT }}
         run: |
-          set -x
           declare +x f=
 
           mkdir -p ~/.config/cloud189
@@ -148,10 +149,11 @@ jobs:
             done
           fi
       - name: release(${{ inputs.scheme }})
+        if: inputs.storage == 'release'
         uses: softprops/action-gh-release@v1
         with:
           prerelease: true
           files: |
             ${{ inputs.scheme }}/(upqueue)/*.cejs-*.log.zst
-            ${{ inputs.scheme }}/(upqueue)/*.cpio.zst
-          tag_name: ${{ inputs.scheme }}
+            ${{ inputs.scheme }}/(upqueue)/*.dataset.zz
+          tag_name: ${{ inputs.scheme }}/${{ env.resAnnot }}
