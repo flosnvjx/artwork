@@ -156,12 +156,7 @@ jobs:
           fi
       - name: create.tag(${{ inputs.scheme }}/${{ env.resAnnot }})
         if: ${{ env.requireCreateTag == 1 }}
-        uses: rickstaa/action-create-tag@v1
-        with:
-          tag: ${{ inputs.scheme }}/${{ env.resAnnot }}
-          message:
-          commit_sha: stock
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release create "$resScheme/$resAnnot" -p -R "$GITHUB_REPOSITORY"
       - name: release(${{ inputs.scheme }})
         if: inputs.storage == 'release'
         uses: softprops/action-gh-release@v1
