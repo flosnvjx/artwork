@@ -132,12 +132,15 @@ jobs:
             done
           }
 
-          upload189 "/apps/artwork/$resScheme" "$resScheme/(upqueue)/$resAnnot.cejs-"*.log.zst || true
+          cd "$resScheme/(upqueue)"
+          upload189 "/apps/artwork/$resScheme" "$resAnnot.cejs-"*.log.zst || exit
           declare +x f=
-          for f in "$resScheme/(upqueue)/"*.cpio.zst; do
-            upload189 "$f" || break
-            rm -- "$f"
-          done
+          if find . -name "*.cpio.zst" &>/dev/null; then
+            for f in *.cpio.zst; do
+              upload189 "$f" || break
+              rm -- "$f"
+            done
+          fi
       - name: release(${{ inputs.scheme }})
         uses: softdrops/action-gh-release@v1
         with:
