@@ -1,5 +1,4 @@
 name: cejs
-run-name: cejs(${{ env.resAnnot }})
 on:
   workflow_dispatch:
     inputs:
@@ -19,6 +18,7 @@ on:
           - releases
         default: cloud189
       annot:
+run-name: cejs(${{ inputs.annot }})
 defaults:
   run:
     shell: bash
