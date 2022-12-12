@@ -56,7 +56,7 @@ jobs:
 
           for walkId in "${resIdsArr[@]}"; do
             sleep 1.$RANDOM
-            if NODE_TLS_REJECT_UNAUTHORIZED=0 node cejscrawler/comic.*/"$resScheme".js "$walkId" archive_images=false preserve_work_page
+            if NODE_TLS_REJECT_UNAUTHORIZED=0 node cejscrawler/comic.*/"$resScheme".js "$walkId" archive_images=false
             then
               okIdsArr+=("$walkId")
             else
@@ -65,7 +65,9 @@ jobs:
           done
 
           cd "$resScheme"
-          set -f; declare +x walkWorkDir walkWorkId; IFS=$'\n' for walkWorkDir in $(find . -maxdepth 1 -type d -regexp './[1-9][0-9]* .*'); do
+          set -f; declare +x walkWorkDir walkWorkId
+          IFS=$'\n'
+          for walkWorkDir in $(find . -maxdepth 1 -type d -regexp './[1-9][0-9]* .*'); do
             walkWorkId=$(basename -- "$walkWorkDir" | sed -zEe 's%^([0-9]+) .*%\1%'
             if find "$walkWorkDir" -type f -print0 | sed -zEe 's%\./%%' | LC_ALL=C sort -zt/ | cpio -o0cC1 -R +0:+0 --reproducible --quiet | tee -- "(upqueue)/$walkWorkId.cpio-ing" >&-
               mv -T -- "(upqueue)/$walkWorkId."cpio{-ing,}
