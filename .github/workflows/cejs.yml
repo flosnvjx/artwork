@@ -49,6 +49,7 @@ jobs:
           fi
       - name: cejscrawler.${{ inputs.scheme }}(${{ inputs.ids }})
         run: |
+          set -x
           mkdir -p "$resScheme/(upqueue)"
 
           declare +x -a resIdsArr=($(printf '%s' "$resIds" | sed -sEe 's%[,; ]+%\n%g' | grep -Ee '^[0-9]+$'))
@@ -108,6 +109,7 @@ jobs:
         env:
           CLOUD189_CONFIGTEXT: ${{ secrets.CLOUD189_CONFIGTEXT }}
         run: |
+          set -x
           declare +x f=
 
           mkdir -p ~/.config/cloud189
@@ -127,7 +129,7 @@ jobs:
             fi
             while [[ $# -gt 0 ]]; do
               local fsz="$(stat -c "%s" -- "$1")"
-              if cloud189 up "$1" "$remote" | tail -1 | grep -qe 'upload complete'; then
+              if cloud189 up "$1" "$remote" | tail -1 | tee /dev/stderr | grep -qe 'upload complete'; then
                 printf '%s\n' "cloud189($1): $fsz"
               else
                 printf '%s\n' "cloud189($1): $fsz FAILURE"
