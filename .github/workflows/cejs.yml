@@ -69,7 +69,7 @@ jobs:
           IFS=$'\n'
           for walkWorkDir in $(find . -maxdepth 1 -type d -regexp './[1-9][0-9]* .*'); do
             walkWorkId="$(basename -- "$walkWorkDir" | sed -zEe 's%^([0-9]+) .*%\1%')"
-            if find "$walkWorkDir" -type f -print0 | sed -zEe 's%\./%%' | LC_ALL=C sort -zt/ | cpio -o0cC1 -R +0:+0 --reproducible --quiet | tee -- "(upqueue)/$walkWorkId.cpio-ing" >&-
+            if find "$walkWorkDir" -type f -print0 | sed -zEe 's%\./%%' | LC_ALL=C sort -zt/ | cpio -o0cC1 -R +0:+0 --reproducible --quiet | tee -- "(upqueue)/$walkWorkId.cpio-ing" >&-; then
               mv -T -- "(upqueue)/$walkWorkId."cpio{-ing,}
               rm -rf -- "$walkWorkDir"
             fi
@@ -126,7 +126,7 @@ jobs:
               local +x remote="/apps/artwork/$resScheme"
             fi
             while [[ $# -gt 0 ]]; do
-              if cloud189 up "$1" "$remote" | tail -1 | grep -qe 'upload complete'
+              if cloud189 up "$1" "$remote" | tail -1 | grep -qe 'upload complete'; then
                 printf '%s\n' "cloud189($1): ."
               else
                 printf '%s\n' "cloud189($1): FAILURE"
