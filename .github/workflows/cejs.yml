@@ -161,6 +161,7 @@ jobs:
           tag: ${{ inputs.scheme }}/${{ env.resAnnot }}
           message:
           commit_sha: stock
+          github_token: ${{ secrets.GITHUB_TOKEN }}
       - name: release(${{ inputs.scheme }})
         if: inputs.storage == 'release'
         uses: softprops/action-gh-release@v1
