@@ -1,4 +1,5 @@
 name: cejs
+run-name: cejs(${{ env.resAnnot }})
 on:
   workflow_dispatch:
     inputs:
@@ -17,27 +18,27 @@ on:
           - cloud189
           - releases
         default: cloud189
+      annot:
 defaults:
   run:
     shell: bash
+permissions: {}
 env:
   resIds: ${{ inputs.ids }}
   resScheme: ${{ inputs.scheme }}
   resStor: ${{ inputs.storage }}
+  resAnnot: ${{ inputs.annot }}
   cejsVer: latest
   cejsEpoch: 1
 jobs:
   in-one-go:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.10
     steps:
-      - name: apt()
-        run: |
-          DEBIAN_FRONTEND=noninteractive sudo apt-get install -qq libarchive-tools pixz </dev/null >/dev/null
       - name: cache.npm(cejscrawler)
         uses: actions/cache@v3
         with:
           path: cejscrawler
-          key: node_modules-cejscrawler-v${{ env.cejsVer }}_${{ env.cejsEpoch }}-ubuntu-latest
+          key: node_modules-cejscrawler-${{ env.cejsVer }}_${{ env.cejsEpoch }}
       - name: npm(cejscrawler)
         run: |
           if ! [[ -d cejscrawler ]]; then
@@ -46,16 +47,95 @@ jobs:
           fi
       - name: cejscrawler.${{ inputs.scheme }}(${{ inputs.ids }})
         run: |
-          mkdir -p "$resScheme"
+          mkdir -p "$resScheme/(upqueue)"
+
           declare +x -a resIdsArr=($(printf '%s' "$resIds" | sed -sEe 's%[,; ]+%\n%g' | grep -Ee '^[0-9]+$'))
+          declare +x -a okIdsArr=() errIdsArr=()
+
           for walkId in "${resIdsArr[@]}"; do
             sleep 1.$RANDOM
-            if NODE_TLS_REJECT_UNAUTHORIZED=0 node cejscrawler/comic.cmn-Hans-CN/u17.js "$walkId" archive_images=false
+            if NODE_TLS_REJECT_UNAUTHORIZED=0 node cejscrawler/comic.*/"$resScheme".js "$walkId" archive_images=false preserve_work_page
             then
-              echo "$walkId" >> "$resScheme"/ok.lst
+              okIdsArr+=("$walkId")
             else
-              echo "$walkId" >> "$resScheme"/err.lst
+              errIdsArr+=("$walkId")
             fi
           done
-          ls -lR "$resScheme"
-          find "$resScheme" -name '*.json' -print0 | xargs -0rL1 jq -r .
+
+          cd "$resScheme"
+          set -f; declare +x walkWorkDir walkWorkId; IFS=$'\n' for walkWorkDir in $(find . -maxdepth 1 -type d -regexp './[1-9][0-9]* .*'); do
+            walkWorkId=$(basename -- "$walkWorkDir" | sed -zEe 's%^([0-9]+) .*%\1%'
+            if find "$walkWorkDir" -type f -print0 | sed -zEe 's%\./%%' | LC_ALL=C sort -zt/ | cpio -o0cC1 -R +0:+0 --reproducible --quiet | tee -- "(upqueue)/$walkWorkId.cpio-ing" >&-
+              mv -T -- "(upqueue)/$walkWorkId."cpio{-ing,}
+              rm -rf -- "$walkWorkDir"
+            fi
+          done
+
+          cd '(upqueue)'
+          find -maxdepth 1 -type f -name '*.cpio' -print0 | \
+          xargs -0 zstdmt -14 --rm --
+
+          resAnnot="$(printf %s "$resAnnot"|sed -ze 's%[\n /]%%g')
+          if [[ -z "$resAnnot" ]]; then
+            resAnnot="$(TZ=Asia/Shanghai date +%Y%m%d%H%M%S)"
+          fi
+          echo resAnnot=$resAnnot >> $GITHUB_ENV
+          7za a -tzip -mx=0 -sae -sdel -- "$resAnnot.zz" '*.cpio.zst'
+          if [[ ${#okIdsArr[@]} -gt 0 ]]; then
+            printf '%s\n' "${okIdsArr[@]}" | zstd -o "$resAnnot".txt.zst
+          fi
+          if [[ ${#errIdsArr[@]} -gt 0 ]]; then
+            printf '%s\n' "${errIdsArr[@]}" | zstd -o "$resAnnot".err.log.zst
+          fi
+      - name: cache.go(cloud189)
+        if: inputs.storage == 'cloud189'
+        uses: actions/cache@v3
+        with:
+          path: ~/go/bin/cloud189
+          key: go-bin-cloud189
+      - name: go(cloud189)
+        if: inputs.storage == 'cloud189'
+        run: |
+          if ! [[ -x ~/go/bin/cloud189 ]]; then
+            go install github.com/gowsp/cloud189/cmd/cloud189@latest
+          fi
+      - name: cloud189()
+        if: inputs.storage == 'cloud189'
+        env:                                                              _CLOUD189_CONFIGTEXT: ${{ secrets._CLOUD189_CONFIGTEXT }}
+        run: |
+          declare +x f=
+
+          mkdir -p ~/.config/cloud189
+          mkfifo ~/.config/cloud189/config.json
+          cloud189() {
+            printf %s "$_CLOUD189_CONFIGTEXT" | jq -cr . | tee > ~/.config/cloud189/config.json
+            ~/go/bin/cloud189 "${@}"
+          }
+          upload189() {
+            if [[ $# -gt 1 ]]; then
+              local +x remote="$1"
+              shift
+            else
+              local +x remote="/apps/artwork/$resScheme"
+            fi
+            while [[ $# -gt 0 ]]; do
+              if cloud189 up "$1" "$remote" | tail -1 | grep -qe 'upload complete'
+                printf '%s\n' "cloud189($1); ok."
+                rm -- "$1"
+              else
+                printf '%s\n' "cloud189($1); failed."
+              fi
+              shift
+            done
+          }
+
+          upload189 /apps/artwork/"$resScheme" "$resScheme/(upqueue)/$resAnnot"*.zst
+          upload189 /apps/artwork/"$resScheme" "$resScheme/(upqueue)/$resAnnot.zz"
+      - name: release(${{ inputs.scheme }})
+        uses: softdrops/action-gh-release@v1
+        with:
+          prerelease: true
+          files: |
+            ${{ inputs.scheme }}/(upqueue)/*.zst
+            ${{ inputs.scheme }}/(upqueue)/*.zz
+          tag_name: ${{ inputs.scheme }}
