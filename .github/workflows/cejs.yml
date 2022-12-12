@@ -96,7 +96,7 @@ jobs:
         if: inputs.storage == 'cloud189'
         uses: actions/cache@v3
         with:
-          path: ~/go/bin/cloud189
+          path: ~/go/bin/cloud1*
           key: go-bin-cloud189
       - name: go(cloud189)
         if: inputs.storage == 'cloud189'
@@ -113,10 +113,9 @@ jobs:
           declare +x f=
 
           mkdir -p ~/.config/cloud189
-          mkfifo ~/.config/cloud189/config.json
+          printf %s "$CLOUD189_CONFIGTEXT" | jq -cr . | tee > ~/.config/cloud189/config.json
 
           cloud189() {
-            printf %s "$CLOUD189_CONFIGTEXT" | jq -cr . | tee > ~/.config/cloud189/config.json
             ~/go/bin/cloud189 "${@}"
           }
 
