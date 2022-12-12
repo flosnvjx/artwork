@@ -68,7 +68,7 @@ jobs:
           set -f; declare +x walkWorkDir walkWorkId
           IFS=$'\n'
           for walkWorkDir in $(find . -maxdepth 1 -type d -regexp './[1-9][0-9]* .*'); do
-            walkWorkId=$(basename -- "$walkWorkDir" | sed -zEe 's%^([0-9]+) .*%\1%'
+            walkWorkId="$(basename -- "$walkWorkDir" | sed -zEe 's%^([0-9]+) .*%\1%')"
             if find "$walkWorkDir" -type f -print0 | sed -zEe 's%\./%%' | LC_ALL=C sort -zt/ | cpio -o0cC1 -R +0:+0 --reproducible --quiet | tee -- "(upqueue)/$walkWorkId.cpio-ing" >&-
               mv -T -- "(upqueue)/$walkWorkId."cpio{-ing,}
               rm -rf -- "$walkWorkDir"
