@@ -22,7 +22,6 @@ run-name: ${{ inputs.annot }}
 defaults:
   run:
     shell: bash
-permissions: {}
 env:
   resIds: ${{ inputs.ids }}
   resScheme: ${{ inputs.scheme }}
