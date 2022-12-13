@@ -100,10 +100,17 @@ jobs:
 
           cd '(upqueue)'
           find -maxdepth 1 -type f -name '*.cpio' -print0 | \
-          time xargs -0r zstdmt -q --rm --
+          time xargs -0r zstdmt -q --zstd=hlog=30 --rm --
 
           if [[ "$resStor" == release ]]; then
-            7za a -tzip -mx=0 -bsp0 -bso0 -sae -sdel -- "$resAnnot.dataset.zz" '*.cpio.zst'
+            declare +x sumsize="$(du -bS --apparent-size | cut -f1)"
+            if [[ "$sumsize" -gt 2147483648 ]]; then
+              7za a -tzip -v1536m -mx=0 -bsp0 -bso0 -sae -sdel -- "$resAnnot.dataset.zz" '*.cpio.zst'
+            elif [[ "$sumsize" -gt 22 ]]; then
+              7za a -tzip -mx=0 -bsp0 -bso0 -sae -sdel -- "$resAnnot.dataset.zz" '*.cpio.zst'
+            else
+              exit 22
+            fi
           fi
           if [[ ${#okIdsArr[@]} -gt 0 ]]; then
             printf '%s\n' "${okIdsArr[@]}" | zstd -qo "$resAnnot".cejs-ok."$(date +%s)".log.zst
@@ -175,6 +182,6 @@ jobs:
           fi
           find "$resScheme/(upqueue)" '(' \
                -name "$resAnnot.cejs-*.log.zst" \
-            -o -name "$resAnnot.dataset.zz" \
+            -o -name "$resAnnot.dataset.zz*" \
             ')' -print0 | \
           xargs -0rI@@ gh release upload "$resScheme/$resAnnot" @@ --clobber -R "$GITHUB_REPOSITORY"
