@@ -158,7 +158,8 @@ jobs:
             gh release create "$resScheme/$resAnnot" -p --target 63da79a3e51fc466a4a9f5629c8f125bb87bc653 -R "$GITHUB_REPOSITORY" <&-
             requireCreateTag=0
           fi
-          find "$resScheme/(upqueue)" '('
-            -name "$resAnnot.cejs-*.log.zst" -o -name "$resAnnot.dataset.zz"
+          find "$resScheme/(upqueue)" '(' \
+               -name "$resAnnot.cejs-*.log.zst" \
+            -o -name "$resAnnot.dataset.zz" \
             ')' -print0 | \
           xargs -0rI@@ gh release upload "$resScheme/$resAnnot" @@ -R "$GITHUB_REPOSITORY"
