@@ -153,7 +153,7 @@ jobs:
         if: inputs.storage == 'release'
         run: |
           gh {
-            GH_TOKEN=${{ github.token }} gh "$@"
+            GH_TOKEN=${{ github.token }} env gh "$@"
           }
           find "$resScheme/(upqueue)" -name "$resAnnot.cejs-*.log.zst" \
                                    -o -name "$resAnnot.dataset.zz" -print0 | \
