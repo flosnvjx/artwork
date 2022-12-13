@@ -41,8 +41,6 @@ jobs:
           key: node_modules-cejs_c-${{ env.cejsVer }}_${{ env.cejsEpoch }}
       - name: main()
         run: |
-          set -x
-
           if ! [[ -d cejs_c ]]; then
             git clone -qb flos --depth 1 --single-branch https://github.com/flosnvjx/work_crawler.git/ cejs_c
             env -C cejs_c -- npm install --silent cejs
@@ -68,7 +66,7 @@ jobs:
           IFS=$'\n'
           for walkWorkDir in $(find . -maxdepth 1 -type d -regex './[1-9][0-9]* .*'); do
             walkWorkId="$(basename -- "$walkWorkDir" | sed -zEe 's%^([0-9]+) .*%\1%')"
-            if find "$walkWorkDir" -type f -print0 | sed -zEe 's%\./%%' | LC_ALL=C sort -zt/ | cpio -o0cC1 -R +0:+0 --reproducible --quiet > "(upqueue)/$walkWorkId.cpio-ing" >&-; then
+            if find "$walkWorkDir" -type f -print0 | sed -zEe 's%\./%%' | LC_ALL=C sort -zt/ | cpio -o0cC1 -R +0:+0 --reproducible --quiet > "(upqueue)/$walkWorkId.cpio-ing"; then
               mv -T -- "(upqueue)/$walkWorkId."cpio{-ing,}
               rm -rf -- "$walkWorkDir"
             fi
@@ -84,7 +82,7 @@ jobs:
           fi
           echo resAnnot=$resAnnot >> $GITHUB_ENV
           if [[ "$resStor" == release ]]; then
-            if ! curl -qgsfo /dev/null "https://github.com/$GITHUB_REPOSITORY/releases/tags/$resScheme/$resAnnot"; then
+            if ! curl -qgsfo /dev/null "https://github.com/$GITHUB_REPOSITORY/releases/tag/$resScheme/$resAnnot"; then
               echo requireCreateTag=1 >> $GITHUB_ENV
             fi
           fi
@@ -156,12 +154,11 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          find "$resScheme/(upqueue)" -name "$resAnnot.cejs-*.log.zst" \
-                                   -o -name "$resAnnot.dataset.zz" -print0 | \
-          {
-            if [[ "$requireCreateTag" == 1 ]]; then
-              gh release create "$resScheme/$resAnnot" -p --target 63da79a3e51fc466a4a9f5629c8f125bb87bc653 -R "$GITHUB_REPOSITORY" <&-
-              requireCreateTag=0
-            fi
-            xargs -0rI@@ gh release upload "$resScheme/$resAnnot" @@ -R "$GITHUB_REPOSITORY"
-          }
+          if [[ "$requireCreateTag" == 1 ]]; then
+            gh release create "$resScheme/$resAnnot" -p --target 63da79a3e51fc466a4a9f5629c8f125bb87bc653 -R "$GITHUB_REPOSITORY" <&-
+            requireCreateTag=0
+          fi
+          find "$resScheme/(upqueue)" '('
+            -name "$resAnnot.cejs-*.log.zst" -o -name "$resAnnot.dataset.zz"
+            ')' -print0 | \
+          xargs -0rI@@ gh release upload "$resScheme/$resAnnot" @@ -R "$GITHUB_REPOSITORY"
