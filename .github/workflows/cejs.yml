@@ -151,17 +151,21 @@ jobs:
               rm -- "$f"
             done
           fi
+      - name: taglist(${{ inputs.scheme }}/${{ env.resAnnot }})
+        if: inputs.storage == 'release'
+        uses: actions/checkout@v3
+        with:
+          ref: nci
+          path: taglist
+          fetch-depth: 1
       - name: release(${{ inputs.scheme }}/${{ env.resAnnot }})
+        if: inputs.storage == 'release'
         run: |
-          printf '%s\n' ${{ secrets.ARTWORK_TOKEN }} | gh auth login --with-token
-
-          if [[ "$requireCreateTag" == 1 ]]; then
-            gh release create "$resScheme/$resAnnot" -p --target 63da79a3e51fc466a4a9f5629c8f125bb87bc653 -R "$GITHUB_REPOSITORY"
-          fi
-
-          if [[ "$resStor" == release ]]; then
-            find "$resScheme/(upqueue)" \
-              -name "*.cejs-*.log.zst" -o \
-              -name "*.dataset.zz" -print0 \
-             | xargs -0rI@@ gh release upload "$resScheme/$resAnnot" @@ -R "$GITHUB_REPOSITORY"
-          fi
+          cd taglist
+          find "../$resScheme/(upqueue)" -name "$resAnnot.cejs-*.log.zst" -o -name "$resAnnot.dataset.zz" -print0 | {
+            if [[ "$requireCreateTag" == 1 ]]; then
+              xargs -0rI@@ gh release create "$resScheme/$resAnnot" @@ -p
+            else
+              xargs -0r gh release upload "$resScheme/$resAnnot"
+            fi
+          }
