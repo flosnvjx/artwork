@@ -55,7 +55,7 @@ jobs:
           declare +x -a okIdsArr=() errIdsArr=()
 
           if [[ "$resParallel" -gt 1 ]]; then
-            mkdir "$resScheme/(upqueue)/.rec"
+            mkdir "$resScheme/(upqueue)/.rec" cache
 
             printf '%s\0' "${resIdsArr[@]}" | xargs -0rL1 -P"$resParallel" bash -c '
               sleep 0.$RANDOM
@@ -65,8 +65,8 @@ jobs:
                 touch "$resScheme/(upqueue)/.rec/err.$0"
               fi
             '
-            okIdsArr+=($(env -C "$resScheme/(upqueue)/.rec" find -maxdepth 1 -type f -size 0 -print0 | grep -e '^\./ok\..' | sed -e 's%^\./ok\.%%' | sort -u))
-            errIdsArr+=($(env -C "$resScheme/(upqueue)/.rec" find -maxdepth 1 -type f -size 0 -print0 | grep -e '^./err\..' | sed -e 's%^\./err\.%%' | sort -u))
+            okIdsArr+=($(env -C "$resScheme/(upqueue)/.rec" find -maxdepth 1 -type f -size 0 -print | grep -e '^\./ok\..' | sed -e 's%^\./ok\.%%' | sort -u))
+            errIdsArr+=($(env -C "$resScheme/(upqueue)/.rec" find -maxdepth 1 -type f -size 0 -print | grep -e '^./err\..' | sed -e 's%^\./err\.%%' | sort -u))
             rm -rf "$resScheme/(upqueue)/.rec"
           else
             for walkId in "${resIdsArr[@]}"; do
