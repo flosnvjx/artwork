@@ -160,6 +160,8 @@ jobs:
           fetch-depth: 1
       - name: release(${{ inputs.scheme }}/${{ env.resAnnot }})
         if: inputs.storage == 'release'
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           cd taglist
           find "../$resScheme/(upqueue)" -name "$resAnnot.cejs-*.log.zst" -o -name "$resAnnot.dataset.zz" -print0 | {
