@@ -54,14 +54,12 @@ jobs:
           declare +x -a resIdsArr=($(printf '%s' "$resIds" | sed -sEe 's%[,; ]+%\n%g' | grep -Ee '^[0-9]+$'))
           declare +x -a okIdsArr=() errIdsArr=()
 
-          set -x
           if [[ "$resParallel" -gt 1 ]]; then
             mkdir "$resScheme/(upqueue)/.rec" cache
 
             printf '%s\0' "${resIdsArr[@]}" | xargs -0rL1 -P"$resParallel" bash -xc '
               sleep 0.$RANDOM
-              if NODE_TLS_REJECT_UNAUTHORIZED=0 node cejs_c/comic.*/"$resScheme".js "$0" archive_images=false && \
-                [[ "$(env -C "$resScheme/(upqueue)" find -maxdepth 1 -type d -name "$0 *"|wc -l)" -gt 0 ]]
+              if NODE_TLS_REJECT_UNAUTHORIZED=0 node cejs_c/comic.*/"$resScheme".js "$0" archive_images=false && ls -1 -- "$resScheme" | grep -qe "^$0 .\+"
               then
                 touch "$resScheme/(upqueue)/.rec/ok.$0"
               else
@@ -73,8 +71,7 @@ jobs:
             rm -rf "$resScheme/(upqueue)/.rec"
           else
             for walkId in "${resIdsArr[@]}"; do
-              if NODE_TLS_REJECT_UNAUTHORIZED=0 node cejs_c/comic.*/"$resScheme".js "$walkId" archive_images=false && \
-              [[ "$(env -C "$resScheme/(upqueue)" find -maxdepth 1 -type d -name "$walkId *"|wc -l)" -gt 0 ]]
+              if NODE_TLS_REJECT_UNAUTHORIZED=0 node cejs_c/comic.*/"$resScheme".js "$walkId" archive_images=false && ls -1 -- "$resScheme" | grep -qe "^$walkId .\+"
               then
                 okIdsArr+=("$walkId")
               else
@@ -83,6 +80,8 @@ jobs:
             done
           fi
 
+          set -f
+
           resAnnot="$(printf %s "$resAnnot" | sed -ze 's%[\n]% %g' | sed -Ee 's|[/. ~^?*]|-|g;s|@|()|g;s%\[%(%g;s%\]%)%g' | sed -Ee 's%^-+%%')"
           if [[ -z "$resAnnot" ]]; then
             resAnnot="$(TZ=Asia/Shanghai date +%Y%m%d%H%M%S)"
@@ -90,7 +89,7 @@ jobs:
           echo resAnnot=$resAnnot >> $GITHUB_ENV
 
           cd "$resScheme"
-          set -f; declare +x walkWorkDir walkWorkId
+          declare +x walkWorkDir walkWorkId
           for walkWorkDir in $(find . -maxdepth 1 -type d -regex './[1-9][0-9]* .*'); do
             walkWorkId="$(basename -- "$walkWorkDir" | sed -zEe 's%^([0-9]+) .*%\1%')"
             if find "$walkWorkDir" -type f -print0 | sed -zEe 's%\./%%' | LC_ALL=C sort -zt/ | cpio -o0cC1 -R +0:+0 --reproducible --quiet > "(upqueue)/$walkWorkId.cpio-ing"; then
@@ -107,10 +106,10 @@ jobs:
             7za a -tzip -mx=0 -bsp0 -bso0 -sae -sdel -- "$resAnnot.dataset.zz" '*.cpio.zst'
           fi
           if [[ ${#okIdsArr[@]} -gt 0 ]]; then
-            printf '%s\n' "${okIdsArr[@]}" | zstd -qo "$resAnnot".cejs-ok.log.zst
+            printf '%s\n' "${okIdsArr[@]}" | zstd -qo "$resAnnot".cejs-ok."$(date +%s)".log.zst
           fi
           if [[ ${#errIdsArr[@]} -gt 0 ]]; then
-            printf '%s\n' "${errIdsArr[@]}" | zstd -qo "$resAnnot".cejs-err.log.zst
+            printf '%s\n' "${errIdsArr[@]}" | zstd -qo "$resAnnot".cejs-err."$(date +%s)".log.zst
           fi
       - name: cache.go(cloud189)
         if: inputs.storage == 'cloud189'
@@ -178,4 +177,4 @@ jobs:
                -name "$resAnnot.cejs-*.log.zst" \
             -o -name "$resAnnot.dataset.zz" \
             ')' -print0 | \
-          xargs -0rI@@ gh release upload "$resScheme/$resAnnot" @@ -R "$GITHUB_REPOSITORY"
+          xargs -0rI@@ gh release upload "$resScheme/$resAnnot" @@ --clobber -R "$GITHUB_REPOSITORY"
