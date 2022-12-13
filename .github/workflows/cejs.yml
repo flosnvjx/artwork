@@ -32,8 +32,6 @@ env:
   requireCreateTag: 0
 jobs:
   in-one-go:
-    environment:
-      name: cloud189
     runs-on: ubuntu-latest
     steps:
       - name: cache.npm(cejs_c)
@@ -153,18 +151,17 @@ jobs:
               rm -- "$f"
             done
           fi
-      - name: create.release(${{ inputs.scheme }}/${{ env.resAnnot }})
-        if: ${{ env.requireCreateTag == 1 }}
-        env:
-          GH_TOKEN: ${{ secrets.ARTWORK_FGTOKEN }}
+      - name: release(${{ inputs.scheme }}/${{ env.resAnnot }})
         run: |
-          gh release create "$resScheme/$resAnnot" -p --target 63da79a3e51fc466a4a9f5629c8f125bb87bc653 -R "$GITHUB_REPOSITORY"
-      - name: upload.release(${{ inputs.scheme }})
-        if: inputs.storage == 'release'
-        env:
-          GH_TOKEN: ${{ secrets.ARTWORK_FGTOKEN }}
-        run: |
-          find "$resScheme/(upqueue)" \
-            -name "*.cejs-*.log.zst" -o \
-            -name "*.dataset.zz" -print0 \
-           | xargs -0rI@@ gh release upload "$resScheme/$resAnnot" @@ -R "$GITHUB_REPOSITORY"
+          printf '%s\n' ${{ secrets.ARTWORK_TOKEN }} | gh auth login --with-token
+
+          if [[ "$requireCreateTag" == 1 ]]; then
+            gh release create "$resScheme/$resAnnot" -p --target 63da79a3e51fc466a4a9f5629c8f125bb87bc653 -R "$GITHUB_REPOSITORY"
+          fi
+
+          if [[ "$resStor" == release ]]; then
+            find "$resScheme/(upqueue)" \
+              -name "*.cejs-*.log.zst" -o \
+              -name "*.dataset.zz" -print0 \
+             | xargs -0rI@@ gh release upload "$resScheme/$resAnnot" @@ -R "$GITHUB_REPOSITORY"
+          fi
