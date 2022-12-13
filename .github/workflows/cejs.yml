@@ -60,18 +60,22 @@ jobs:
 
             printf '%s\0' "${resIdsArr[@]}" | xargs -0rL1 -P"$resParallel" bash -xc '
               sleep 0.$RANDOM
-              if NODE_TLS_REJECT_UNAUTHORIZED=0 node cejs_c/comic.*/"$resScheme".js "$0" archive_images=false; then
+              if NODE_TLS_REJECT_UNAUTHORIZED=0 node cejs_c/comic.*/"$resScheme".js "$0" archive_images=false && \
+                [[ "$(env -C "$resScheme/(upqueue)" find -maxdepth 1 -type d -name "$0 *"|wc -l)" -gt 0 ]]
+              then
                 touch "$resScheme/(upqueue)/.rec/ok.$0"
               else
                 touch "$resScheme/(upqueue)/.rec/err.$0"
               fi
             '
-            okIdsArr+=($(env -C "$resScheme/(upqueue)/.rec" find -maxdepth 1 -type f -size 0 -print | grep -e '^\./ok\..' | sed -e 's%^\./ok\.%%' | sort -u))
-            errIdsArr+=($(env -C "$resScheme/(upqueue)/.rec" find -maxdepth 1 -type f -size 0 -print | grep -e '^./err\..' | sed -e 's%^\./err\.%%' | sort -u))
+            okIdsArr+=($(env -C "$resScheme/(upqueue)/.rec" find -maxdepth 1 -type f -size 0 -print | sed -ne '/^\./ok\../p' | sed -e 's%^\./ok\.%%' | sort -u))
+            errIdsArr+=($(env -C "$resScheme/(upqueue)/.rec" find -maxdepth 1 -type f -size 0 -print | sed -ne '/^./err\../p' | sed -e 's%^\./err\.%%' | sort -u))
             rm -rf "$resScheme/(upqueue)/.rec"
           else
             for walkId in "${resIdsArr[@]}"; do
-              if NODE_TLS_REJECT_UNAUTHORIZED=0 node cejs_c/comic.*/"$resScheme".js "$walkId" archive_images=false; then
+              if NODE_TLS_REJECT_UNAUTHORIZED=0 node cejs_c/comic.*/"$resScheme".js "$walkId" archive_images=false && \
+              [[ "$(env -C "$resScheme/(upqueue)" find -maxdepth 1 -type d -name "$walkId *"|wc -l)" -gt 0 ]]
+              then
                 okIdsArr+=("$walkId")
               else
                 errIdsArr+=("$walkId")
