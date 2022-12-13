@@ -152,7 +152,7 @@ jobs:
       - name: release(${{ inputs.scheme }}/${{ env.resAnnot }})
         if: inputs.storage == 'release'
         run: |
-          gh {
+          gh() {
             GH_TOKEN=${{ github.token }} env gh "$@"
           }
           find "$resScheme/(upqueue)" -name "$resAnnot.cejs-*.log.zst" \
