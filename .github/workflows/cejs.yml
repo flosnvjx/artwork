@@ -18,6 +18,7 @@ on:
           - release
         default: release
       annot:
+      parallel:
 run-name: ${{ inputs.scheme }}/${{ inputs.annot }}
 defaults:
   run:
@@ -27,6 +28,7 @@ env:
   resScheme: ${{ inputs.scheme }}
   resStor: ${{ inputs.storage }}
   resAnnot: ${{ inputs.annot }}
+  resParallel: ${{ inputs.parallel }}
   cejsVer: latest
   cejsEpoch: 1
 jobs:
@@ -40,6 +42,8 @@ jobs:
           key: node_modules-cejs_c-${{ env.cejsVer }}_${{ env.cejsEpoch }}
       - name: main()
         run: |
+          IFS=$'\n'
+
           if ! [[ -d cejs_c ]]; then
             git clone -qb flos --depth 1 --single-branch https://github.com/flosnvjx/work_crawler.git/ cejs_c
             env -C cejs_c -- npm install --silent cejs
@@ -50,15 +54,29 @@ jobs:
           declare +x -a resIdsArr=($(printf '%s' "$resIds" | sed -sEe 's%[,; ]+%\n%g' | grep -Ee '^[0-9]+$'))
           declare +x -a okIdsArr=() errIdsArr=()
 
-          for walkId in "${resIdsArr[@]}"; do
-            sleep 1.$RANDOM
-            if NODE_TLS_REJECT_UNAUTHORIZED=0 node cejs_c/comic.*/"$resScheme".js "$walkId" archive_images=false
-            then
-              okIdsArr+=("$walkId")
-            else
-              errIdsArr+=("$walkId")
-            fi
-          done
+          if [[ "$resParallel" -gt 1 ]]; then
+            mkdir "$resScheme/(upqueue)/.rec"
+
+            printf '%s\0' "${resIdsArr[@]}" | xargs -0rL1 -P"$resParallel" bash -c '
+              sleep 0.$RANDOM
+              if NODE_TLS_REJECT_UNAUTHORIZED=0 node cejs_c/comic.*/"$resScheme".js "$0" archive_images=false; then
+                touch "$resScheme/(upqueue)/.rec/ok.$0"
+              else
+                touch "$resScheme/(upqueue)/.rec/err.$0"
+              fi
+            '
+            okIdsArr+=($(env -C "$resScheme/(upqueue)/.rec" find -maxdepth 1 -type f -size 0 -print0 | grep -e '^\./ok\..' | sed -e 's%^\./ok\.%%' | sort -u))
+            errIdsArr+=($(env -C "$resScheme/(upqueue)/.rec" find -maxdepth 1 -type f -size 0 -print0 | grep -e '^./err\..' | sed -e 's%^\./err\.%%' | sort -u))
+            rm -rf "$resScheme/(upqueue)/.rec"
+          else
+            for walkId in "${resIdsArr[@]}"; do
+              if NODE_TLS_REJECT_UNAUTHORIZED=0 node cejs_c/comic.*/"$resScheme".js "$walkId" archive_images=false; then
+                okIdsArr+=("$walkId")
+              else
+                errIdsArr+=("$walkId")
+              fi
+            done
+          fi
 
           resAnnot="$(printf %s "$resAnnot" | sed -ze 's%[\n]% %g' | sed -Ee 's|[/. ~^?*]|-|g;s|@|()|g;s%\[%(%g;s%\]%)%g' | sed -Ee 's%^-+%%')"
           if [[ -z "$resAnnot" ]]; then
@@ -68,7 +86,6 @@ jobs:
 
           cd "$resScheme"
           set -f; declare +x walkWorkDir walkWorkId
-          IFS=$'\n'
           for walkWorkDir in $(find . -maxdepth 1 -type d -regex './[1-9][0-9]* .*'); do
             walkWorkId="$(basename -- "$walkWorkDir" | sed -zEe 's%^([0-9]+) .*%\1%')"
             if find "$walkWorkDir" -type f -print0 | sed -zEe 's%\./%%' | LC_ALL=C sort -zt/ | cpio -o0cC1 -R +0:+0 --reproducible --quiet > "(upqueue)/$walkWorkId.cpio-ing"; then
