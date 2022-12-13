@@ -29,7 +29,6 @@ env:
   resAnnot: ${{ inputs.annot }}
   cejsVer: latest
   cejsEpoch: 1
-  requireCreateTag: 0
 jobs:
   in-one-go:
     runs-on: ubuntu-latest
@@ -81,11 +80,6 @@ jobs:
             resAnnot="$(TZ=Asia/Shanghai date +%Y%m%d%H%M%S)"
           fi
           echo resAnnot=$resAnnot >> $GITHUB_ENV
-          if [[ "$resStor" == release ]]; then
-            if ! curl -qgsfo /dev/null "https://github.com/$GITHUB_REPOSITORY/releases/tag/$resScheme/$resAnnot"; then
-              echo requireCreateTag=1 >> $GITHUB_ENV
-            fi
-          fi
           if [[ "$resStor" == release ]]; then
             7za a -tzip -mx=0 -bsp0 -bso0 -sae -sdel -- "$resAnnot.dataset.zz" '*.cpio.zst'
           fi
@@ -154,9 +148,8 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          if [[ "$requireCreateTag" == 1 ]]; then
+          if ! gh release view "$resScheme/$resAnnot" &>/dev/null; then
             gh release create "$resScheme/$resAnnot" -p --target 63da79a3e51fc466a4a9f5629c8f125bb87bc653 -R "$GITHUB_REPOSITORY" <&-
-            requireCreateTag=0
           fi
           find "$resScheme/(upqueue)" '(' \
                -name "$resAnnot.cejs-*.log.zst" \
