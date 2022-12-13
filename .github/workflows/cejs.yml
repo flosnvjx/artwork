@@ -159,7 +159,7 @@ jobs:
                                    -o -name "$resAnnot.dataset.zz" -print0 | \
           {
             if [[ "$requireCreateTag" == 1 ]]; then
-              gh release create "$resScheme/$resAnnot" -p <&-
+              gh release create "$resScheme/$resAnnot" -p --target 63da79a3e51fc466a4a9f5629c8f125bb87bc653 -R "$GITHUB_REPOSITORY" <&-
               requireCreateTag=0
             fi
             xargs -0r gh release upload "$resScheme/$resAnnot"
