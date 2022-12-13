@@ -41,6 +41,8 @@ jobs:
           key: node_modules-cejs_c-${{ env.cejsVer }}_${{ env.cejsEpoch }}
       - name: main()
         run: |
+          set -x
+
           if ! [[ -d cejs_c ]]; then
             git clone -qb flos --depth 1 --single-branch https://github.com/flosnvjx/work_crawler.git/ cejs_c
             env -C cejs_c -- npm install --silent cejs
@@ -66,7 +68,7 @@ jobs:
           IFS=$'\n'
           for walkWorkDir in $(find . -maxdepth 1 -type d -regex './[1-9][0-9]* .*'); do
             walkWorkId="$(basename -- "$walkWorkDir" | sed -zEe 's%^([0-9]+) .*%\1%')"
-            if find "$walkWorkDir" -type f -print0 | sed -zEe 's%\./%%' | LC_ALL=C sort -zt/ | cpio -o0cC1 -R +0:+0 --reproducible --quiet | tee -- "(upqueue)/$walkWorkId.cpio-ing" >&-; then
+            if find "$walkWorkDir" -type f -print0 | sed -zEe 's%\./%%' | LC_ALL=C sort -zt/ | cpio -o0cC1 -R +0:+0 --reproducible --quiet > "(upqueue)/$walkWorkId.cpio-ing" >&-; then
               mv -T -- "(upqueue)/$walkWorkId."cpio{-ing,}
               rm -rf -- "$walkWorkDir"
             fi
