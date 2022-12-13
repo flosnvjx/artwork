@@ -60,6 +60,12 @@ jobs:
             fi
           done
 
+          resAnnot="$(printf %s "$resAnnot" | sed -ze 's%[\n]% %g' | sed -Ee 's|[/. ~^?*]|-|g;s|@|()|g;s%\[%(%g;s%\]%)%g' | sed -Ee 's%^-+%%')"
+          if [[ -z "$resAnnot" ]]; then
+            resAnnot="$(TZ=Asia/Shanghai date +%Y%m%d%H%M%S)"
+          fi
+          echo resAnnot=$resAnnot >> $GITHUB_ENV
+
           cd "$resScheme"
           set -f; declare +x walkWorkDir walkWorkId
           IFS=$'\n'
@@ -75,11 +81,6 @@ jobs:
           find -maxdepth 1 -type f -name '*.cpio' -print0 | \
           time xargs -0r zstdmt -q --rm --
 
-          resAnnot="$(printf %s "$resAnnot" | sed -ze 's%[\n]% %g' | sed -Ee 's|[/. ~^?*]|-|g;s|@|()|g;s%\[%(%g;s%\]%)%g' | sed -Ee 's%^-+%%')"
-          if [[ -z "$resAnnot" ]]; then
-            resAnnot="$(TZ=Asia/Shanghai date +%Y%m%d%H%M%S)"
-          fi
-          echo resAnnot=$resAnnot >> $GITHUB_ENV
           if [[ "$resStor" == release ]]; then
             7za a -tzip -mx=0 -bsp0 -bso0 -sae -sdel -- "$resAnnot.dataset.zz" '*.cpio.zst'
           fi
