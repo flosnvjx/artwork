@@ -18,7 +18,7 @@ on:
           - release
         default: release
       annot:
-run-name: ${{ inputs.annot }}
+run-name: ${{ inputs.scheme }}/${{ inputs.annot }}
 defaults:
   run:
     shell: bash
@@ -34,26 +34,18 @@ jobs:
   in-one-go:
     runs-on: ubuntu-latest
     steps:
-      - name: taglist(${{ inputs.scheme }}/${{ env.resAnnot }})
-        if: inputs.storage == 'release'
-        uses: actions/checkout@v3
-        with:
-          ref: nci
-          fetch-depth: 0
       - name: cache.npm(cejs_c)
         uses: actions/cache@v3
         with:
           path: cejs_c
           key: node_modules-cejs_c-${{ env.cejsVer }}_${{ env.cejsEpoch }}
-      - name: npm(cejs_c)
+      - name: main()
         run: |
           if ! [[ -d cejs_c ]]; then
             git clone -qb flos --depth 1 --single-branch https://github.com/flosnvjx/work_crawler.git/ cejs_c
             env -C cejs_c -- npm install --silent cejs
           fi
-      - name: cejs_c.${{ inputs.scheme }}(${{ inputs.ids }})
-        run: |
-          set -x
+
           mkdir -p "$resScheme/(upqueue)"
 
           declare +x -a resIdsArr=($(printf '%s' "$resIds" | sed -sEe 's%[,; ]+%\n%g' | grep -Ee '^[0-9]+$'))
@@ -157,19 +149,16 @@ jobs:
               rm -- "$f"
             done
           fi
-      - name: tag(${{ inputs.scheme }}/${{ env.resAnnot }})
-        if: env.requireCreateTag == '1'
-        uses: rickstaa/action-create-tag@v1
-        with:
-          tag: ${{ inputs.scheme }}/${{ env.resAnnot }}
-          message:
-          commit_sha: 63da79a3e51fc466a4a9f5629c8f125bb87bc653
-      - name: tag(${{ inputs.scheme }}/${{ env.resAnnot }})
-        if: inputs.scheme == 'release'
-        uses: softprops/action-gh-release@v1
-        with:
-          prerelease: true
-          tag_name: ${{ inputs.scheme }}/${{ env.resAnnot }}
-          files: |
-            ${{ inputs.scheme }}/(upqueue)/${{ env.resAnnot }}.cejs-*.log.zst
-            ${{ inputs.scheme }}/(upqueue)/${{ env.resAnnot }}.dataset.zz
+      - name: release(${{ inputs.scheme }}/${{ env.resAnnot }})
+        if: inputs.storage == 'release'
+        run: |
+          alias gh='GH_TOKEN=${{ secrets.GITHUB_TOKEN }} gh'
+          find "$resScheme/(upqueue)" -name "$resAnnot.cejs-*.log.zst" \
+                                   -o -name "$resAnnot.dataset.zz" -print0 | \
+          {
+            if [[ "$requireCreateTag" == 1 ]]; then
+              gh release create "$resScheme/$resAnnot" -p <&-
+              requireCreateTag=0
+            fi
+            xargs -0r gh release upload "$resScheme/$resAnnot"
+          }
