@@ -34,6 +34,12 @@ jobs:
   in-one-go:
     runs-on: ubuntu-latest
     steps:
+      - name: taglist(${{ inputs.scheme }}/${{ env.resAnnot }})
+        if: inputs.storage == 'release'
+        uses: actions/checkout@v3
+        with:
+          ref: nci
+          fetch-depth: 0
       - name: cache.npm(cejs_c)
         uses: actions/cache@v3
         with:
@@ -151,23 +157,19 @@ jobs:
               rm -- "$f"
             done
           fi
-      - name: taglist(${{ inputs.scheme }}/${{ env.resAnnot }})
-        if: inputs.storage == 'release'
-        uses: actions/checkout@v3
+      - name: tag(${{ inputs.scheme }}/${{ env.resAnnot }})
+        if: env.requireCreateTag == '1'
+        uses: rickstaa/action-create-tag@v1
         with:
-          ref: nci
-          path: taglist
-          fetch-depth: 1
-      - name: release(${{ inputs.scheme }}/${{ env.resAnnot }})
-        if: inputs.storage == 'release'
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          cd taglist
-          find "../$resScheme/(upqueue)" -name "$resAnnot.cejs-*.log.zst" -o -name "$resAnnot.dataset.zz" -print0 | {
-            if [[ "$requireCreateTag" == 1 ]]; then
-              xargs -0rI@@ gh release create "$resScheme/$resAnnot" @@ -p
-            else
-              xargs -0r gh release upload "$resScheme/$resAnnot"
-            fi
-          }
+          tag: ${{ inputs.scheme }}/${{ env.resAnnot }}
+          message:
+          commit_sha: 63da79a3e51fc466a4a9f5629c8f125bb87bc653
+      - name: tag(${{ inputs.scheme }}/${{ env.resAnnot }})
+        if: inputs.scheme == 'release'
+        uses: softprops/action-gh-release@v1
+        with:
+          prerelease: true
+          tag_name: ${{ inputs.scheme }}/${{ env.resAnnot }}
+          files: |
+            ${{ inputs.scheme }}/(upqueue)/${{ env.resAnnot }}.cejs-*.log.zst
+            ${{ inputs.scheme }}/(upqueue)/${{ env.resAnnot }}.dataset.zz
