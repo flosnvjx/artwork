@@ -68,8 +68,8 @@ jobs:
                 touch "$resScheme/(upqueue)/.rec/err.$0"
               fi
             '
-            okIdsArr+=($(env -C "$resScheme/(upqueue)/.rec" find -maxdepth 1 -type f -size 0 -print | sed -ne '/^\./ok\../p' | sed -e 's%^\./ok\.%%' | sort -u))
-            errIdsArr+=($(env -C "$resScheme/(upqueue)/.rec" find -maxdepth 1 -type f -size 0 -print | sed -ne '/^./err\../p' | sed -e 's%^\./err\.%%' | sort -u))
+            okIdsArr+=($(env -C "$resScheme/(upqueue)/.rec" find -maxdepth 1 -type f -size 0 -print | sed -ne '/^\.\/ok\../p' | sed -e 's%^\./ok\.%%' | sort -u))
+            errIdsArr+=($(env -C "$resScheme/(upqueue)/.rec" find -maxdepth 1 -type f -size 0 -print | sed -ne '/^.\/err\../p' | sed -e 's%^\./err\.%%' | sort -u))
             rm -rf "$resScheme/(upqueue)/.rec"
           else
             for walkId in "${resIdsArr[@]}"; do
