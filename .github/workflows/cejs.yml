@@ -23,6 +23,7 @@ run-name: ${{ inputs.scheme }}/${{ inputs.annot }}
 defaults:
   run:
     shell: bash
+concurrency: u17
 env:
   resIds: ${{ inputs.ids }}
   resScheme: ${{ inputs.scheme }}
@@ -57,7 +58,7 @@ jobs:
           if [[ "$resParallel" -gt 1 ]]; then
             mkdir "$resScheme/(upqueue)/.rec" cache
 
-            printf '%s\0' "${resIdsArr[@]}" | xargs -0rL1 -P"$resParallel" bash -xc '
+            printf '%s\0' "${resIdsArr[@]}" | xargs -0rL1 -P"$resParallel" bash -c '
               sleep 0.$RANDOM
               if NODE_TLS_REJECT_UNAUTHORIZED=0 node cejs_c/comic.*/"$resScheme".js "$0" archive_images=false && ls -1 -- "$resScheme" | grep -qe "^$0 .\+"
               then
@@ -104,12 +105,10 @@ jobs:
 
           if [[ "$resStor" == release ]]; then
             declare +x sumsize="$(du -bS --apparent-size | cut -f1)"
-            if [[ "$sumsize" -gt 2147483648 ]]; then
-              7za a -tzip -v1536m -mx=0 -bsp0 -bso0 -sae -sdel -- "$resAnnot.dataset.zz" '*.cpio.zst'
-            elif [[ "$sumsize" -gt 22 ]]; then
+            if [[ "$sumsize" -lt 1610612736 ]]; then
               7za a -tzip -mx=0 -bsp0 -bso0 -sae -sdel -- "$resAnnot.dataset.zz" '*.cpio.zst'
             else
-              exit 22
+              7za a -tzip -v1536m -mx=0 -bsp0 -bso0 -sae -sdel -- "$resAnnot.dataset.zz" '*.cpio.zst'
             fi
           fi
           if [[ ${#okIdsArr[@]} -gt 0 ]]; then
