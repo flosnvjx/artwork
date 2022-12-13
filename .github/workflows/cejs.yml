@@ -172,7 +172,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           if ! gh release view "$resScheme/$resAnnot" &>/dev/null; then
-            gh release create "$resScheme/$resAnnot" -p --target 63da79a3e51fc466a4a9f5629c8f125bb87bc653 -R "$GITHUB_REPOSITORY" <&-
+            gh release create "$resScheme/$resAnnot" -p --target 63da79a3e51fc466a4a9f5629c8f125bb87bc653 -F /dev/null --title "$resScheme/$resAnnot" -R "$GITHUB_REPOSITORY"
           fi
           find "$resScheme/(upqueue)" '(' \
                -name "$resAnnot.cejs-*.log.zst" \
