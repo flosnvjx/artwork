@@ -105,10 +105,10 @@ jobs:
 
           if [[ "$resStor" == release ]]; then
             declare +x sumsize="$(du -bS --apparent-size | cut -f1)"
-            if [[ "$sumsize" -lt 1610612736 ]]; then
+            if [[ "$sumsize" -lt 1048576000 ]]; then
               7za a -tzip -mx=0 -bsp0 -bso0 -sae -sdel -- "$resAnnot.dataset.zz" '*.cpio.zst'
             else
-              7za a -tzip -v1536m -mx=0 -bsp0 -bso0 -sae -sdel -- "$resAnnot.dataset.zz" '*.cpio.zst'
+              7za a -tzip -v1048576000b -mx=0 -bsp0 -bso0 -sae -sdel -- "$resAnnot.dataset.zz" '*.cpio.zst'
             fi
           fi
           if [[ ${#okIdsArr[@]} -gt 0 ]]; then
