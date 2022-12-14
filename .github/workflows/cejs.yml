@@ -183,4 +183,4 @@ jobs:
                -name "$resAnnot.cejs-*.log.zst" \
             -o -name "$resAnnot.dataset.zz*" \
             ')' -print0 | \
-          xargs -0rI@@ gh release upload "$resScheme/$resAnnot" @@ --clobber -R "$GITHUB_REPOSITORY"
+          xargs -0rL1 -I@@ gh release upload "$resScheme/$resAnnot" @@ --clobber -R "$GITHUB_REPOSITORY"
