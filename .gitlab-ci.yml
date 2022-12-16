@@ -1,0 +1,17 @@
+default:
+  image: busybox:stable-glibc
+
+stages:
+  - setup-runtimes
+  - cejs
+  - upload
+
+setup:
+  stage: setup-runtimes
+  script:
+    - echo a > b
+
+crawl:
+  stage: cejs
+  script:
+    - cat b
