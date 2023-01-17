@@ -51,8 +51,8 @@ jobs:
         uses: actions/cache@v3
         with:
           path:
-            - ~/.local/lib/python*/
-            - ~/.cache/pip
+            ~/.local/lib/python*/
+            ~/.cache/pip
           key: pipUser-onecomic-ubuntu-latest
       - name: pip()
         run: pip install -U --user onecomic
