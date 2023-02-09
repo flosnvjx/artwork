@@ -77,7 +77,7 @@ jobs:
 
             printf '%s\0' "${resIdsArr[@]}" | xargs -0rL1 -P"$resParallel" bash -c '
               sleep 0.$RANDOM
-              if NODE_TLS_REJECT_UNAUTHORIZED=0 node cejs_c/comic.cmn*/"$resScheme".js "$0" archive_images=false && ls -1 -- "$resScheme" | grep -qe "^$0 .\+"
+              if NODE_TLS_REJECT_UNAUTHORIZED=0 node cejs_c/comic.cmn*/"$resScheme".js "$0" archive_images=false && find "$resScheme" -maxdepth 1 -name "*${0}*" -type d
               then
                 touch "$resScheme/(upqueue)/.rec/ok.$0"
               else
@@ -89,7 +89,7 @@ jobs:
             rm -rf "$resScheme/(upqueue)/.rec"
           else
             for walkId in "${resIdsArr[@]}"; do
-              if NODE_TLS_REJECT_UNAUTHORIZED=0 node cejs_c/comic.*/"$resScheme".js "$walkId" archive_images=false && ls -1 -- "$resScheme" | grep -qe "^$walkId .\+"
+              if NODE_TLS_REJECT_UNAUTHORIZED=0 node cejs_c/comic.*/"$resScheme".js "$walkId" archive_images=false && find "$resScheme" -maxdepth 1 -name "*${walkid}*" -type d
               then
                 okIdsArr+=("$walkId")
               else
@@ -102,11 +102,11 @@ jobs:
 
           resAnnot="$(printf %s "$resAnnot" | sed -ze 's%[\n]% %g' | sed -Ee 's|[/. ~^?*]|-|g;s|@|()|g;s%\[%(%g;s%\]%)%g' | sed -Ee 's%^-+%%')"
           cd "$resScheme"
-          declare +x walkWorkDir walkWorkId workdirs=($(find . -maxdepth 1 -type d -regex './[-_a-zA-Z0-9]* .*'))
+          declare +x walkWorkDir walkWorkId workdirs=($(find . -maxdepth 1 -type d)
           for walkWorkDir in "${workdirs[@]}"; do
-            walkWorkId="$(basename -- "$walkWorkDir" | sed -zEe 's%^([0-9]+) .*%\1%')"
-            if find "$walkWorkDir" -type f -print0 | sed -zEe 's%\./%%' | LC_ALL=C sort -zt/ | cpio -o0cC1 -R +0:+0 --reproducible --quiet > "(upqueue)/$walkWorkId.cpio-ing"; then
-              mv -T -- "(upqueue)/$walkWorkId."cpio{-ing,}
+            walkwdbn="$(basename -- "$walkWorkDir")"
+            if find "$walkWorkDir" -type f -print0 | sed -zEe 's%\./%%' | LC_ALL=C sort -zt/ | cpio -o0cC1 -R +0:+0 --reproducible --quiet > "(upqueue)/$walkwdbn.cpio-ing"; then
+              mv -T -- "(upqueue)/$walkwdbn."cpio{-ing,}
               rm -rf -- "$walkWorkDir"
             fi
           done
@@ -114,7 +114,7 @@ jobs:
           if [[ -z "$resAnnot" ]]; then
             resAnnot="$(TZ=Asia/Shanghai date +%Y%m%d%H%M%S)."
             if [[ ${#workdirs} -eq 1 ]]; then
-              resAnnot="$resAnnot/$(basename -- "${workdirs[0]}" | sed -zEe 's%^[^ ]+ (.+)%\1%')"
+              resAnnot="$resAnnot/"$(basename -- "${workdirs[0]}" | sed -ze 's%[\n]% %g' | sed -Ee 's|[/. ~^?*]|-|g;s|@|()|g;s%\[%(%g;s%\]%)%g' | sed -Ee 's%^-+%%')"
             fi
           fi
           echo resAnnot=$resAnnot >> $GITHUB_ENV
