@@ -2,18 +2,18 @@ on:
   workflow_call:
     inputs:
       implementation:
-        type: choice
-        options:
-          - cejs
+        type: string
         default: 'cejs'
+        required: true
       resid:
+        type: string
         required: true
       resannot:
+        type: string
       storage:
-        type: choice
+        type: string
         default: 'release-asset'
-        options:
-          - release-asset
+        required: true
   workflow_dispatch:
     inputs:
       implementation:
@@ -21,14 +21,18 @@ on:
         options:
           - cejs
         default: 'cejs'
+        required: true
       resid:
+        type: string
         required: true
       resannot:
+        type: string
       storage:
         type: choice
         default: 'release-asset'
         options:
           - release-asset
+        required: true
 name: update()
 ## *name: ensure that there is no 'string' in expression
 run-name: update.${{ inputs.implementation }}(${{ inputs.resid }}#${{ inputs.resannot }})
