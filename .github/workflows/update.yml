@@ -4,7 +4,6 @@ on:
       implementation:
         type: string
         default: 'cejs'
-        required: true
       resid:
         type: string
         required: true
@@ -13,7 +12,6 @@ on:
       storage:
         type: string
         default: 'release-asset'
-        required: true
   workflow_dispatch:
     inputs:
       implementation:
