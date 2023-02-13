@@ -36,5 +36,6 @@ name: update()
 run-name: update.${{ inputs.implementation }}(${{ inputs.resid }}#${{ inputs.resannot }})
 jobs:
   main:
+    runs-on: ubuntu-latest
     steps:
       - run: echo o
