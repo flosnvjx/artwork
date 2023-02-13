@@ -16,8 +16,8 @@ on:
         default: 'release-asset'
         options:
           - release-asset
-name: 'update()'
-run-name: 'update.'${{ inputs.implementation }}'('${{ inputs.resid }}'#"'${{ inputs.resannot }}'")'
+name: update()
+run-name: update.${{ inputs.implementation }}(${{ inputs.resid }}#${{ inputs.resannot }})
 jobs:
   in-one-go:
     runs-on: ubuntu-latest
