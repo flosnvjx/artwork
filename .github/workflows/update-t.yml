@@ -3,5 +3,5 @@ on:
 jobs:
   pp:
     uses: ./.github/workflows/update.yml
-      with:
-        resid: ppppp
+    with:
+      resid: ppppp
