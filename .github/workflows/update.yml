@@ -1,43 +1,23 @@
-name: update
 on:
   workflow_dispatch:
     inputs:
-      resid:
-        type: string
-        required: true
-      resannot:
-        type: string
       implementation:
         type: choice
-        required: true
-        default: cejs
         options:
           - cejs
-      storage:
-        type: choice
         required: true
-        default: release
+        default: 'cejs'
+      resid:
+        required: true
+      resannot:
+      storage:
+        required: true
+        type: choice
+        default: 'release-asset'
         options:
-          - release
-run-name: 'update('${{ inputs.resid }}${{ inputs.resannot > 0 && '#' }}${{ inputs.resannot }}')'
-defaults:
-  run:
-    shell: bash
-concurrency: cejs
-permissions:
-  actions: read
-  checks: none
-  contents: write
-  deployments: none
-  id-token: none
-  issues: none
-  discussions: none
-  packages: none
-  pages: none
-  pull-requests: none
-  repository-projects: none
-  security-events: none
-  statuses: write
+          - release-asset
+name: 'update()'
+run-name: 'update.'${{ inputs.implementation }}'('${{ inputs.resid }}'#"'${{ inputs.resannot }}'")'
 jobs:
   in-one-go:
     runs-on: ubuntu-latest
