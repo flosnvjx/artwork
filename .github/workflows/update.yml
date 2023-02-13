@@ -1,6 +1,6 @@
 name: update
 on:
-  workflow_call:
+  workflow_dispatch:
     inputs:
       resid:
         type: string
