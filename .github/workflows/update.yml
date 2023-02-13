@@ -32,3 +32,7 @@ on:
 name: update()
 ## *name: ensure that there is no 'string' in expression
 run-name: update.${{ inputs.implementation }}(${{ inputs.resid }}#${{ inputs.resannot }})
+jobs:
+  main:
+    steps:
+      - run: echo o
