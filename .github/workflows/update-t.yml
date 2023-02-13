@@ -2,7 +2,6 @@ on:
   workflow_dispatch:
 jobs:
   pp:
-    steps:
-      - uses: ./.github/workflows/update.yml
-        with:
-          resid: ppppp
+    uses: ./.github/workflows/update.yml
+      with:
+        resid: ppppp
