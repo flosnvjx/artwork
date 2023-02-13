@@ -19,7 +19,7 @@ on:
         default: release
         options:
           - release
-run-name: 'update('${{ inputs.resid }}${{ inputs.resannot && '#' }}${{ inputs.resannot }}')'
+run-name: 'update('${{ inputs.resid }}'#'${{ inputs.resannot }}')'
 defaults:
   run:
     shell: bash
