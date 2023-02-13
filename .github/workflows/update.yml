@@ -1,25 +1,34 @@
 on:
+  workflow_call:
+    inputs:
+      implementation:
+        type: choice
+        options:
+          - cejs
+        default: 'cejs'
+      resid:
+        required: true
+      resannot:
+      storage:
+        type: choice
+        default: 'release-asset'
+        options:
+          - release-asset
   workflow_dispatch:
     inputs:
       implementation:
         type: choice
         options:
           - cejs
-        required: true
         default: 'cejs'
       resid:
         required: true
       resannot:
       storage:
-        required: true
         type: choice
         default: 'release-asset'
         options:
           - release-asset
 name: update()
+## *name: ensure that there is no 'string' in expression
 run-name: update.${{ inputs.implementation }}(${{ inputs.resid }}#${{ inputs.resannot }})
-jobs:
-  in-one-go:
-    runs-on: ubuntu-latest
-    steps:
-      - run: echo a
