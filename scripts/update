@@ -120,7 +120,7 @@ commit-asset() {
   setopt globdots
   local +x ts=$(date +%s)
   local +x md5meta= p
-  du -a --apparant-size -bD --files0-from=- -- * | LC_ALL=C sort -z | md5sum - | IFS=' ' read -r md5meta p
+  du -abD -- * | LC_ALL=C sort -z | md5sum - | IFS=' ' read -r md5meta p
 
   if [[ "$last_md5meta" != $md5meta ]] {
     printf '%s\0' * | env -C ziptree REO_BASEFN=../commit-stage/$implementation.$ts.p reozip
