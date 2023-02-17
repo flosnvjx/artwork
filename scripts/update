@@ -8,7 +8,7 @@ cancel() {
 
 ## setup
 setup-cejs() {
-  if [[ ! -d implementation.cejs ]] {
+  if [[ ! -d implementation ]] {
     git clone -qb flos --depth 1 --single-branch https://github.com/flosnvjx/work_crawler.git/ implementation
     env -C implementation -- npm install --silent cejs
   }
