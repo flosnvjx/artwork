@@ -1,5 +1,5 @@
-#!/usr/bin/env -S zsh -efx
-[[ $CI == true ]]
+#!/usr/bin/zsh
+set -ex
 setopt pipefail
 
 cancel() {
@@ -35,6 +35,9 @@ set-resenv() {
       ;;
     (txdm:?*|txac:?*|tx:?*|qqac:?*|acqq:?*)
       export resscheme=txdm
+      ;;
+    (ComicWalker:?*|comicwalker:?*)
+      export resscheme=cw
       ;;
     (?*:?*)
       export resscheme=${resid%%:*}
@@ -93,6 +96,9 @@ checkout-asset() {
         (nvtw)
           ln -sr $PWD/worktree/webtoon -T ziptree/$resscheme
         ;;
+        (cw)
+          ln -sr $PWD/worktree/ComicWalker -T ziptree/$resscheme
+        ;;
         (?*)
           ln -sr $PWD/worktree/$resscheme -t ziptree
         ;;
@@ -137,10 +143,12 @@ commit-asset() {
 }
 
 _invoke-cejs() {
-  node cejs_c/comic.cmn*/${${${resscheme:/nvcn/dongman}:/nvtw/webtoon}:/txdm/qq}.js ${resid} archive_images=false
+  node ../implementation/comic.*/${${${${resscheme:/nvcn/dongman}:/nvtw/webtoon}:/txdm/qq}:/cw/ComicWalker}.js ${resid} archive_images=false
 }
 
 invoke() {
   cd worktree
   _invoke-$implementation "${(@)argv}" || { [[ "$accumulated_errors" != 1 ]]; touch ../errout }
 }
+
+"${(@)argv}"
