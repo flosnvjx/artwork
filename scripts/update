@@ -143,7 +143,7 @@ commit-asset() {
 }
 
 _invoke-cejs() {
-  node ../implementation/comic.*/${${${${resscheme:/nvcn/dongman}:/nvtw/webtoon}:/txdm/qq}:/cw/ComicWalker}.js ${resid} archive_images=false
+  node ../implementation/comic.*/${${${${resscheme:/nvcn/dongman}:/nvtw/webtoon}:/txdm/qq}:/cw/ComicWalker}.js ${resid} recheck=true archive_images=false
 }
 
 invoke() {
