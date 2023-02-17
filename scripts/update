@@ -36,11 +36,11 @@ set-resenv() {
     (txdm:?*|txac:?*|tx:?*|qqac:?*|acqq:?*)
       export resscheme=txdm
       ;;
-    (ComicWalker:?*|comicwalker:?*)
+    (cw:?*|ComicWalker:?*|comicwalker:?*)
       export resscheme=cw
       ;;
     (?*:?*)
-      export resscheme=${resid#*:}
+      export resscheme=${resid%%:*}
       ;;
     (*) false;;
   }
