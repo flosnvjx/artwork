@@ -71,13 +71,16 @@ jobs:
           path: repo
       - run: |
           git clone --depth 1 --single-branch https://github.com/flosnvjx/scriptbase ~/.scriptbase
-          printf '%s\n' ~/.scriptbase/{,ghci} $GITHUB_WORKSPACE/scripts >> $GITHUB_PATH
+          echo "$HOME/.scriptbase" >> $GITHUB_PATH
+          echo "$GITHUB_WORKSPACE/scripts" >> $GITHUB_PATH
           sudo apt update&&sudo apt install -qqq zsh libarchive-tools
       - env:
           GH_TOKEN: 0
           GITHUB_TOKEN: 0
         run: update setup
       - run: |
+          echo "${PATH[@]}"
+          pwd
           update set-resenv
           update checkout-asset
       - env:
