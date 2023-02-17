@@ -123,7 +123,7 @@ commit-asset() {
   du -abD -- * | LC_ALL=C sort -z | md5sum - | IFS=' ' read -r md5meta p
 
   if [[ "$last_md5meta" != $md5meta ]] {
-    printf '%s\0' * | env -C ziptree REO_BASEFN=../commit-stage/$implementation.$ts.p reozip
+    printf '%s\0' * | REO_BASEFN=../commit-stage/$implementation.$ts.p reozip
     cd ..
     case $implementation {
       (cejs)
@@ -139,7 +139,7 @@ commit-asset() {
     }
     printf '```\n%s\n%s\n%s\n```\n' 0 $ts md5:$md5meta | gh release edit -F - -R $GITHUB_REPOSITORY -- $resbucket
   } else { echo md5meta unchanged.; cancel }
-  cd ..
+  #cd ..
 }
 
 _invoke-cejs() {
