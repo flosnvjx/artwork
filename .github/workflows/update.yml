@@ -77,10 +77,11 @@ jobs:
       - env:
           GH_TOKEN: 0
           GITHUB_TOKEN: 0
-        run: update setup
-      - run: |
+        run: |
           echo "${PATH[@]}"
           pwd
+          update setup
+      - run: |
           update set-resenv
           update checkout-asset
       - env:
