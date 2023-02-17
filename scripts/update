@@ -126,11 +126,6 @@ commit-asset() {
     pwd
     printf '%s\0' * | REO_BASEFN=../commit-stage/$implementation.$ts.p zsh -x ${commands[reozip]} -
     cd ..
-    case $implementation {
-      (cejs)
-        bsdtar -cf commit-stage/$implementation.$ts.cache.bsdzip --format zip --options zip:compression=store --strip-components 1 worktree/cache || : cache zip failure
-      ;;
-    }
     cd commit-stage
     if [[ "$require_create_release" == 1 ]] {
       gh release create -R $GITHUB_REPOSITORY --draft --target 63da79a3e51fc466a4a9f5629c8f125bb87bc653 -- $resbucket | cat
