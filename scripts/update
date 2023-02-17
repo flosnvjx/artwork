@@ -50,7 +50,7 @@ set-resenv() {
 
   [[ -n "$(print -rn -- $resid | abistring-to-gitname)" ]]
   export resbucket=$resscheme/"$(print -rn -- $resid | abistring-to-gitname)"
-  print -r resbucket=$resbucket
+  print -r resbucket=$resbucket >> $GITHUB_ENV
 }
 
 checkout-asset() {
