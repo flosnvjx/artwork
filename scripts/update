@@ -40,11 +40,11 @@ set-resenv() {
       export resscheme=cw
       ;;
     (?*:?*)
-      export resscheme=${resid%%:*}
+      export resscheme=${resid#*:}
       ;;
     (*) false;;
   }
-  export resid=${resid%%*:}
+  export resid=${resid#*:}
   print -r resid=$resid >> $GITHUB_ENV
   print -r resscheme=$resscheme >> $GITHUB_ENV
 
