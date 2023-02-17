@@ -1,0 +1,146 @@
+#!/usr/bin/env -S zsh -efx
+[[ $CI == true ]]
+setopt pipefail typesettounset
+
+cancel() {
+  gh run cancel -R $GITHUB_REPOSITORY $GITHUB_RUN_ID
+}
+
+## setup
+setup-cejs() {
+  if [[ ! -d implementation.cejs ]] {
+    git clone -qb flos --depth 1 --single-branch https://github.com/flosnvjx/work_crawler.git/ implementation
+    env -C implementation -- npm install --silent cejs
+  }
+}
+
+setup() {
+  case "$implementation" {
+    (cejs) setup-cejs;;
+    ("") setup-cejs
+         print -r -- implementation=cejs >> $GITHUB_ENV
+         ;;
+    (?*) false;;
+  }
+}
+
+## asset
+set-resenv() {
+  case "$resid" {
+    (dm:?*|dmmh:?*|nvcn:?*)
+      export resscheme=nvcn
+      ;;
+    (nvtw:?*|webtoon:?*|webtoons:?*)
+      export resscheme=nvtw
+      ;;
+    (txdm:?*|txac:?*|tx:?*|qqac:?*|acqq:?*)
+      export resscheme=txdm
+      ;;
+    (?*:?*)
+      export resscheme=${resid%%:*}
+      ;;
+    (*) false;;
+  }
+  export resid=${resid%%*:}
+  print -r resid=$resid >> $GITHUB_ENV
+  print -r resscheme=$resscheme >> $GITHUB_ENV
+
+  [[ -n "$(print -rn -- $resid | abistring-to-gitname)" ]]
+  export resbucket=$resscheme/"$(print -rn -- $resid | abistring-to-gitname)"
+  print -r resbucket=$resbucket
+}
+
+checkout-asset() {
+  local +x -i accumulated_errors last_successful_at
+  local +x last_md5meta
+  local -a matched_assets
+  mkdir worktree
+  if {
+    gh release view -R $GITHUB_REPOSITORY --json body -- $resbucket || \
+    echo require_create_release=1 >> $GITHUB_ENV
+  } | jq -r .body | sed -znEe '/^```\n[0-9]+\n[0-9]+\n```\n$/s%^```\n([0-9]+)\n([0-9]+)\nmd5:([0-9a-f]+)\n```\n$%\1 \2 \3% p' | read -r accumulated_errors last_successful_at last_md5meta && [[ $last_successful_at -gt 0 ]] && {
+    if [[ $(( "$(date +%s)" - $last_successful_at )) -le $(( 60*60*24*1 )) ]] cancel
+    function {
+      setopt localoptions
+      setopt rcexpandparam
+      matched_assets=(${$(gh release view -R $GITHUB_REPOSITORY --json assets | jq -r .assets'[]'.name | flhgrep $implementation.$last_successful_at. | flegrep .bsdzip)})
+      [[ ${#matched_assets} -gt 0 ]]
+    }
+  }; {
+    function {
+      setopt localoptions
+      setopt rcexpandparam
+      local +x f; for f (https://github.com/$GITHUB_REPOSITORY/releases/download/$resbucket/${(@)matched_assets}) {
+        curl -qgsfL --url $f | bsdtar -xf - -C worktree
+      }
+    }
+  }
+  if [[ ${#last_md5meta} == 32 ]] {
+    last_md5meta=$last_md5meta >> $GITHUB_ENV
+    last_successful_at=$last_successful_at >> $GITHUB_ENV
+  }
+  accumulated_errors=$accumulated_errors >> $GITHUB_ENV
+  mkdir ziptree
+  case $implementation {
+    (cejs)
+      case $resscheme {
+        (txdm)
+          ln -sr $PWD/worktree/qq -T ziptree/$resscheme
+        ;;
+        (nvcn)
+          ln -sr $PWD/worktree/dongman -T ziptree/$resscheme
+        ;;
+        (nvtw)
+          ln -sr $PWD/worktree/webtoon -T ziptree/$resscheme
+        ;;
+        (?*)
+          ln -sr $PWD/worktree/$resscheme -t ziptree
+        ;;
+      }
+      ;;
+    (*) : undefined
+      false
+      ;;
+  }
+}
+
+commit-asset() {
+  if [[ -f errout ]] {
+    printf '```%s\n%s\n%s\n```' $(( accumulated_errors + 1 )) $last_successful_at $last_md5meta | gh release edit -R $GITHUB_REPOSITORY -F - -- $resbucket
+    false
+  }
+  mkdir commit-stage
+  cd ziptree
+  setopt globdots
+  local +x ts=$(date +%s)
+  local +x md5meta p
+  du -a --apparant-size -bD --files0-from=- -- * | LC_ALL=C sort -z | md5sum - | IFS=' ' read -r md5meta p
+
+  if [[ "$last_md5meta" != $md5meta ]] {
+    printf '%s\0' * | env -C ziptree REO_BASEFN=../commit-stage/$implementation.$ts.p reozip
+    cd ..
+    case $implementation {
+      (cejs)
+        bsdtar -cf commit-stage/$implementation.$ts.cache.bsdzip --format zip --options zip:compression=store --strip-components 1 worktree/cache || : cache zip failure
+      ;;
+    }
+    cd commit-stage
+    if [[ "$require_create_release" == 1 ]] {
+      gh release create -R $GITHUB_REPOSITORY --draft --target 63da79a3e51fc466a4a9f5629c8f125bb87bc653 -- $resbucket | cat
+    }
+    for f (*) {
+      gh release upload -R $GITHUB_REPOSITORY -- $resbucket $f
+    }
+    printf '```\n%s\n%s\n%s\n```\n' 0 $ts md5:$md5meta | gh release edit -F - -R $GITHUB_REPOSITORY -- $resbucket
+  } else { echo md5meta unchanged.; cancel }
+  cd ..
+}
+
+_invoke-cejs() {
+  node cejs_c/comic.cmn*/${${${resscheme:/nvcn/dongman}:/nvtw/webtoon}:/txdm/qq}.js ${resid} archive_images=false
+}
+
+invoke() {
+  cd worktree
+  _invoke-$implementation "${(@)argv}" || { [[ "$accumulated_errors" != 1 ]]; touch ../errout }
+}

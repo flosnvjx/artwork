@@ -4,11 +4,11 @@ on:
       implementation:
         type: string
         default: 'cejs'
+      resannot:
+        type: string
       resid:
         type: string
         required: true
-      resannot:
-        type: string
       storage:
         type: string
         default: 'release-asset'
@@ -31,11 +31,57 @@ on:
         options:
           - release-asset
         required: true
+concurrency: update
 name: update()
 ## *name: ensure that there is no 'string' in expression
 run-name: update.${{ inputs.implementation }}(${{ inputs.resid }}#${{ inputs.resannot }})
+defaults:
+  run:
+    shell: bash
+env:
+  resid: ${{ inputs.resid }}
+  implementation: ${{ inputs.implementation }}
+  GH_TOKEN: ${{ github.token }}
+permissions:
+  actions: write
+  checks: none
+  contents: write
+  deployments: none
+  id-token: none
+  issues: none
+  discussions: none
+  packages: none
+  pages: none
+  pull-requests: none
+  repository-projects: none
+  security-events: none
+  statuses: write
 jobs:
   main:
     runs-on: ubuntu-latest
     steps:
-      - run: echo o
+      - if: inputs.implementation == 'cejs'
+        uses: actions/cache@v3
+        with:
+          path: |
+            implementation
+          key: implementation.${{ inputs.implementation }}
+      - uses: actions/checkout@v3
+        with:
+          path: repo
+      - run: |
+          git clone --depth 1 --single-branch https://github.com/flosnvjx/scriptbase ~/.scriptbase
+          printf '%s\n' ~/.scriptbase/{,ghci} $GITHUB_WORKSPACE/scripts >> $GITHUB_PATH
+          apt update&&apt install -qqq zsh libarchive-tools
+      - env:
+          GH_TOKEN: 0
+          GITHUB_TOKEN: 0
+        run: update setup
+      - run: |
+          update set-resenv
+          update checkout-asset
+      - env:
+          GH_TOKEN: 0
+          GITHUB_TOKEN: 0
+        run: update invoke
+      - run: update commit-asset
