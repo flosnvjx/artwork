@@ -77,11 +77,9 @@ jobs:
       - env:
           GH_TOKEN: 0
           GITHUB_TOKEN: 0
-        run: |
-          update setup
-      - run: |
-          update set-resenv
-          update checkout-asset
+        run: update setup
+      - run: update set-resenv
+      - run: update checkout-asset
       - env:
           GH_TOKEN: 0
           GITHUB_TOKEN: 0
