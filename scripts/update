@@ -124,7 +124,7 @@ commit-asset() {
 
   if [[ "$last_md5meta" != $md5meta ]] {
     pwd
-    printf '%s\0' * | REO_BASEFN=../commit-stage/$implementation.$ts.p zsh -ex reozip
+    printf '%s\0' * | REO_BASEFN=../commit-stage/$implementation.$ts.p zsh -x ${commands[reozip]}
     cd ..
     case $implementation {
       (cejs)
