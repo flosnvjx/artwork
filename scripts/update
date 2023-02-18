@@ -55,13 +55,13 @@ set-resenv() {
 
 checkout-asset() {
   local +x -i accumulated_errors= last_successful_at=
-  local +x last_md5meta=
+  local +x last_md5meta=-
   local -a matched_assets
   mkdir worktree
   if {
     gh release view -R $GITHUB_REPOSITORY --json body -- $resbucket || \
     echo require_create_release=1 >> $GITHUB_ENV
-  } | jq -r .body | sed -znEe '/^```\n[0-9]+\n[0-9]+\n```\n$/s%^```\n([0-9]+)\n([0-9]+)\nmd5:([0-9a-f]+)\n```\n$%\1 \2 \3% p' | read -r accumulated_errors last_successful_at last_md5meta && [[ $last_successful_at -gt 0 ]] && {
+  } | jq -j .body | sed -znEe '/^```\n[0-9]+\n[0-9]+\n[-0-9a-f]\n```\n$/s%^```\n([0-9]+)\n([0-9]+)\n([-0-9a-f]+)\n```\n$%\1 \2 \3% p' | read -r accumulated_errors last_successful_at last_md5meta && [[ $last_successful_at -gt 0 ]] && {
     if [[ $(( "$(date +%s)" - $last_successful_at )) -le $(( 60*60*24*1 )) ]] cancel
     function {
       setopt localoptions
@@ -112,7 +112,7 @@ checkout-asset() {
 
 commit-asset() {
   if [[ -f errout ]] {
-    printf '```%s\n%s\n%s\n```' $(( accumulated_errors + 1 )) $last_successful_at $last_md5meta | gh release edit -R $GITHUB_REPOSITORY -F - -- $resbucket
+    printf '```%s\n%s\n%s\n```' $(( accumulated_errors + 1 )) ${last_successful_at} ${last_md5meta:--} | gh release edit -R $GITHUB_REPOSITORY -F - -- $resbucket
     false
   }
   mkdir commit-stage
@@ -133,7 +133,7 @@ commit-asset() {
     for f (*) {
       gh release upload -R $GITHUB_REPOSITORY -- $resbucket $f
     }
-    printf '```\n%s\n%s\n%s\n```\n' 0 $ts md5:$md5meta | gh release edit -F - -R $GITHUB_REPOSITORY -- $resbucket
+    printf '```\n%s\n%s\n%s\n```\n' 0 $ts $md5meta | gh release edit -F - -R $GITHUB_REPOSITORY -- $resbucket
   } else { echo md5meta unchanged.; cancel }
   #cd ..
 }
