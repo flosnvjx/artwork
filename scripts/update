@@ -62,26 +62,19 @@ checkout-asset() {
     gh release view -R $GITHUB_REPOSITORY --json body -- $resbucket || \
     echo require_create_release=1 >> $GITHUB_ENV
   } | jq -j .body | sed -znEe '/^```\n[0-9]+\n[0-9]+\n[-0-9a-f]+\n```\n$/s%^```\n([0-9]+)\n([0-9]+)\n([-0-9a-f]+)\n```\n$%\1 \2 \3\n% p' | read -r accumulated_errors last_successful_at last_md5meta && [[ $last_successful_at -gt 0 ]] && {
-#    if [[ $(( $(date +%s) - $last_successful_at )) -le $(( 60*60*24*1 )) ]] {
-#      : avoid to invoke frequently
-#      cancel
-#      sleep 999
-#    }
     function {
       setopt localoptions
       setopt rcexpandparam
-      matched_assets=(${$(gh release view -R $GITHUB_REPOSITORY --json assets | jq -r .assets'[]'.name | flhgrep $implementation.$last_successful_at. | flegrep .bsdzip)})
+      matched_assets=(${$(gh release view -R $GITHUB_REPOSITORY --json assets -- $resbucket | jq -r .assets'[]'.name | flhgrep $implementation.$last_successful_at. | flegrep .bsdzip)})
       [[ ${#matched_assets} -gt 0 ]]
     }
-  }; {
-    function {
-      setopt localoptions
-      setopt rcexpandparam
-      local +x f; for f (https://github.com/$GITHUB_REPOSITORY/releases/download/$resbucket/${(@)matched_assets}) {
-        curl -qgsfL --url $f | bsdtar -xf - -C worktree
-      }
-    }
-  }
+  }; then
+      mkdir tmpdir
+      gh release download -R $GITHUB_REPOSITORY -D tmpdir -p $implementation.$last_successful_at.\*.bsdzip -- $resbucket
+      local +x bsdzip; for bsdzip in tmpdir/*.bsdzip; do
+        bsdtar -xf $bsdzip -C worktree
+      done
+  fi
   if [[ ${#last_md5meta} == 32 ]] {
     print -r -- last_md5meta=$last_md5meta >> $GITHUB_ENV
     print -r -- last_successful_at=$last_successful_at >> $GITHUB_ENV
