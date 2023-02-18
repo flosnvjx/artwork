@@ -1,0 +1,37 @@
+#!/bin/zsh
+set -ex
+setopt pipefail
+
+trigger() {
+  local -a triggered
+  local +x min_period_default=$(( 60*60*24*8 ))
+  local -A min_period_by_resscheme
+  min_period_by_resscheme=(
+    cw $((60*60*24*28))
+    nvcn $((60*60*24*10))
+    nvtw $((60*60*24*14))
+  )
+  shuf -- mgutab | LC_ALL=C sort -u | while IFS=$'\t' read -r resschid resannot resperiod; do
+     local +x -i counted_errs last_success
+     if [[ ${#triggered} -ge 2 ]] {
+       return 0
+     }
+     if gh release view -R $GITHUB_REPOSITORY --json body -- ${resschid#*:} | jq -j .body | sed -znEe '/^```\n[0-9]+\n[0-9]+\n[-0-9a-f]+\n```\n$/s%^```\n([0-9]+)\n([0-9]+)\n([-0-9a-f]+)\n```\n$%\1 \2\n% p' | read -r counted_errs last_success; then
+       if [[ $counted_errs -le 2 ]] && [[ $(( $(date +%s) - $last_success )) -ge ${min_period_by_resscheme[${resschid%%:*}]:-${min_period_default}} ]]; then
+         sleep 10
+         gh workflow run -R $GITHUB_REPOSITORY -f resid=${resschid} -f resannot=$resannot -- 'update()'
+         triggered+=($resschid)
+       else
+         continue
+       fi
+     else
+       sleep 10
+       gh workflow run  -R $GITHUB_REPOSITORY -f resid=${resschid} -f resannot=$resannot -- 'update()'
+       triggered+=($resschid)
+     fi
+  done
+  gh run cancel  -R $GITHUB_REPOSITORY $GITHUB_RUN_ID
+  sleep 999
+}
+
+"${(@)argv}"
