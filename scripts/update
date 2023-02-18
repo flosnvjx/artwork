@@ -62,12 +62,10 @@ checkout-asset() {
     gh release view -R $GITHUB_REPOSITORY --json body -- $resbucket || \
     echo require_create_release=1 >> $GITHUB_ENV
   } | jq -j .body | sed -znEe '/^```\n[0-9]+\n[0-9]+\n[-0-9a-f]+\n```\n$/s%^```\n([0-9]+)\n([0-9]+)\n([-0-9a-f]+)\n```\n$%\1 \2 \3\n% p' | read -r accumulated_errors last_successful_at last_md5meta && [[ $last_successful_at -gt 0 ]] && {
-    function {
-      setopt localoptions
-      setopt rcexpandparam
-      matched_assets=(${$(gh release view -R $GITHUB_REPOSITORY --json assets -- $resbucket | jq -r .assets'[]'.name | flhgrep $implementation.$last_successful_at. | flegrep .bsdzip)})
+      gh release view -R $GITHUB_REPOSITORY --json assets -- $resbucket | jq -r .assets'[]'.name
+      command -v flhgrep
+      matched_assets=($(gh release view -R $GITHUB_REPOSITORY --json assets -- $resbucket | jq -r .assets'[]'.name | flhgrep $implementation.$last_successful_at. | flegrep .bsdzip))
       [[ ${#matched_assets} -gt 0 ]]
-    }
   }; then
       mkdir tmpdir
       gh release download -R $GITHUB_REPOSITORY -D tmpdir -p $implementation.$last_successful_at.\*.bsdzip -- $resbucket
