@@ -113,7 +113,7 @@ commit-asset() {
   setopt globdots
   local +x ts=$(date +%s)
   local +x md5meta= p
-  du -0abD -- * | LC_ALL=C sort -zu | md5sum - | IFS=' ' read -r md5meta p
+  du -0abD -- * | grep -zve '\.json$' | LC_ALL=C sort -zu | md5sum - | IFS=' ' read -r md5meta p
 
   if [[ "$last_md5meta" != $md5meta ]] {
     pwd
