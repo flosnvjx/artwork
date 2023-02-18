@@ -104,10 +104,10 @@ checkout-asset() {
 }
 
 commit-asset() {
-  if [[ -f errout ]] {
-    printf '```%s\n%s\n%s\n```' $(( accumulated_errors + 1 )) ${last_successful_at} ${last_md5meta:--} | gh release edit -R $GITHUB_REPOSITORY -F - -- $resbucket
-    false
-  }
+  setopt localoptions
+  setopt localtraps
+  trap 'printf '```%s\n%s\n%s\n```' $(( accumulated_errors + 1 )) ${last_successful_at} ${last_md5meta:--} | gh release edit -R $GITHUB_REPOSITORY -F - -- $resbucket; return 1' ZERR
+  ! [[ -f errout ]]
   mkdir commit-stage
   cd worktree
   setopt globdots
@@ -116,8 +116,13 @@ commit-asset() {
   du -0abD -- * | grep -zve '\.json$' | LC_ALL=C sort -zu | md5sum - | IFS=' ' read -r md5meta p
 
   if [[ "$last_md5meta" != $md5meta ]] {
-    pwd
-    printf '%s\0' * | REO_BASEFN=../commit-stage/$implementation.$ts.p zsh -x ${commands[reozip]} -
+    function {
+      setopt localoptions
+      setopt extendedglob nullglob
+      local -a t=(*(.) */*(.) */*(/))
+      [[ ${#t} -gt 0 ]]
+      printf '%s\0' $t | REO_BASEFN=../commit-stage/$implementation.$ts.preozip -
+    }
     cd ..
     cd commit-stage
     if [[ "$require_create_release" == 1 ]] {
