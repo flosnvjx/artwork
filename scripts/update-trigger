@@ -4,30 +4,60 @@ setopt pipefail
 
 trigger() {
   local -a triggered
-  local +x min_period_default=$(( 60*60*24*8 ))
+  local +x min_period_default=$(( 60*60*24*15 ))
   local -A min_period_by_resscheme
   min_period_by_resscheme=(
-    cw $((60*60*24*28))
-    nvcn $((60*60*24*10))
-    nvtw $((60*60*24*14))
+    cw $((60*60*24*21))
+    weibo $((60*60*18*28))
+    qq $((60*60*24*7*5))
   )
-  shuf -- mgutab | LC_ALL=C sort -u | while IFS=$'\t' read -r resschid resannot resperiod; do
+  bsdcat mgutab | LC_ALL=C sort -u | shuf | grep -vEe '(^$|^#)' | tee /dev/fd/2 | while IFS=$'\t' read -r resschid resannot resperiod; do
+     function {
+       setopt localoptions
+       setopt rematchpcre
+       if [[ "$resperiod" =~ '^[1-9][0-9]*d$' ]]; then
+         resperiod=$(( ${resperiod%?} *60*60*24 ))
+       elif [[ "$resperiod" =~ '^[1-9][0-9]*w$' ]]; then
+         resperiod=$(( ${resperiod%?} *60*60*24*7 ))
+       elif [[ "$resperiod" =~ '^[1-9][0-9]*m$' ]]; then
+         resperiod=$(( ${resperiod%?} *60*60*24*7*4 ))
+       elif [[ "$resperiod" =~ '^[1-9][0-9]*h$' ]]; then
+         resperiod=$(( ${resperiod%?} *60*60 ))
+       elif [[ "$resperiod" =~ '^[1-9][0-9]*$' ]]; then
+         true
+       else
+         resperiod=
+       fi
+       if (( resperiod < 60*60*24 )); then
+         resperiod=
+       fi
+     }
      local +x -i counted_errs last_success
      if [[ ${#triggered} -ge 2 ]] {
        return 0
      }
      sleep 4
-     if gh release view -R $GITHUB_REPOSITORY --json body -- ${resschid#*:} | jq -j .body | sed -znEe '/^```\n[0-9]+\n[0-9]+\n[-0-9a-f]+\n```\n$/s%^```\n([0-9]+)\n([0-9]+)\n([-0-9a-f]+)\n```\n$%\1 \2\n% p' | read -r counted_errs last_success; then
-       if [[ $counted_errs -le 2 ]] && [[ $(( $(date +%s) - $last_success )) -ge ${min_period_by_resscheme[${resschid%%:*}]:-${min_period_default}} ]]; then
+     case "$resschid" in
+       (b22:*|qq:*)
+         implementation=onecomic;;
+       (weibo:*)
+         implementation=gallery-dl;;
+       (*rss:*)
+         implementation=rssgen;;
+       (*)
+         implementation=cejs;;
+     esac
+     if gh release view -R $GITHUB_REPOSITORY --json body -- ${resschid%%:*}/${resschid#*:} | jq -j .body | sed -znEe '/^```\n[0-9]+\n[0-9]+\n[-0-9a-f]+\n```\n$/s%^```\n([0-9]+)\n([0-9]+)\n([-0-9a-f]+)\n```\n.*$%\1 \2\n% p' | read -r counted_errs last_success; then
+       if [[ $counted_errs -le 2 ]] && [[ $(( $(date +%s) - $last_success )) -ge ${resperiod:-${min_period_by_resscheme[${resschid%%:*}]:-${min_period_default}}} ]]; then
          sleep 10
-         gh workflow run -R $GITHUB_REPOSITORY -f resid=${resschid} -f resannot=$resannot -- 'update()'
+         gh workflow run -R $GITHUB_REPOSITORY -f resid=${resschid} -f resannot=$resannot -f implementation=${implementation:-cejs} -- 'update()'
          triggered+=($resschid)
        else
          continue
        fi
      else
        sleep 10
-       gh workflow run  -R $GITHUB_REPOSITORY -f resid=${resschid} -f resannot=$resannot -- 'update()'
+       gh workflow run  -R $GITHUB_REPOSITORY -f resid=${resschid} -f resannot=$resannot -f implementation=${implementation:-cejs} -- 'update()'
        triggered+=($resschid)
      fi
   done

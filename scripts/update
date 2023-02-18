@@ -1,12 +1,25 @@
-#!/usr/bin/zsh
-set -ex
+#!/bin/zsh
 setopt pipefail
+set -e -x
 
 cancel() {
   gh run cancel -R $GITHUB_REPOSITORY $GITHUB_RUN_ID
 }
 
 ## setup
+setup-onecomic() {
+  if ! onecomic --version; then
+    pip install --user -U onecomic
+    pip install --user -U h2
+  fi
+}
+
+setup-gallery-dl() {
+  if ! gallery-dl --version; then
+    pip install --user -U gallery-dl
+  fi
+}
+
 setup-cejs() {
   if [[ ! -d implementation ]] {
     git clone -qb flos --depth 1 --single-branch https://github.com/flosnvjx/work_crawler.git/ implementation
@@ -14,9 +27,32 @@ setup-cejs() {
   }
 }
 
+setup-rssgen() {
+  if [[ ! -d implementation ]]; then mkdir -p implementation/{cargo,bin,prefix}; fi
+  path+=($PWD/implementation/{bin,cargo/bin,prefix/bin})
+  export CARGO_INSTALL_ROOT=$PWD/implementation/cargo
+  rw --help || cargo install rw
+  anewer --version || cargo install anewer
+  go env -w GOBIN=$PWD/implementation/bin
+  dasel --version || go install github.com/tomwright/dasel/v2/cmd/dasel@latest
+  pup --version || go install github.com/ericchiang/pup@master
+  html2data -help &>/dev/null || go install github.com/msoap/html2data/cmd/html2data@latest
+  if ! sfeed_atom </dev/null >/dev/null; then
+    local +x tmpd="$(mktemp -d)"
+    curl -qgsfL https://codemadness.org/releases/sfeed/sfeed-1.7.tar.gz | tar -xzf - -C $tmpd --strip-components 1
+    make PREFIX=$PWD/implementation/prefix -C $tmpd install
+  fi
+  printf '%s\n' $PWD/implementation/bin >> $GITHUB_PATH
+  printf '%s\n' $PWD/implementation/cargo/bin >> $GITHUB_PATH
+  printf '%s\n' $PWD/implementation/prefix/bin >> $GITHUB_PATH
+}
+
 setup() {
   case "$implementation" {
     (cejs) setup-cejs;;
+    (onecomic) setup-onecomic;;
+    (gallery-dl) setup-gallery-dl;;
+    (rssgen) setup-rssgen;;
     ("") setup-cejs
          print -r -- implementation=cejs >> $GITHUB_ENV
          ;;
@@ -39,6 +75,9 @@ set-resenv() {
     (cw:?*|ComicWalker:?*|comicwalker:?*)
       export resscheme=cw
       ;;
+    (b22:?*|b23:?*|bili:?*|bilibili:?*|bman:?*)
+      export resscheme=b22
+      ;;
     (?*:?*)
       export resscheme=${resid%%:*}
       ;;
@@ -49,7 +88,11 @@ set-resenv() {
   print -r resscheme=$resscheme >> $GITHUB_ENV
 
   [[ -n "$(print -rn -- $resid | abistring-to-gitname)" ]]
-  export resbucket=$resscheme/"$(print -rn -- $resid | abistring-to-gitname)"
+  if [[ "$resid" == ?*/?* && "$resscheme" = weibo ]]; then
+    export resbucket=$resscheme/"$(print -rn -- ${resid%/*} | abistring-to-gitname)"
+  else
+    export resbucket=$resscheme/"$(print -rn -- $resid | abistring-to-gitname)"
+  fi
   print -r resbucket=$resbucket >> $GITHUB_ENV
 }
 
@@ -61,7 +104,7 @@ checkout-asset() {
   if {
     gh release view -R $GITHUB_REPOSITORY --json body -- $resbucket || \
     echo require_create_release=1 >> $GITHUB_ENV
-  } | jq -j .body | sed -znEe '/^```\n[0-9]+\n[0-9]+\n[-0-9a-f]+\n```\n$/s%^```\n([0-9]+)\n([0-9]+)\n([-0-9a-f]+)\n```\n$%\1 \2 \3\n% p' | read -r accumulated_errors last_successful_at last_md5meta && [[ $last_successful_at -gt 0 ]]; then
+  } | jq -j .body | sed -znEe '/^```\n[0-9]+\n[0-9]+\n[-0-9a-f]+\n```\n/s%^```\n([0-9]+)\n([0-9]+)\n([-0-9a-f]+)\n```\n.*$%\1\t\2\t\3\n% p' | IFS=$'\t' read -r accumulated_errors last_successful_at last_md5meta && [[ $last_successful_at -gt 0 ]]; then
       mkdir tmpdir
       if gh release download -R $GITHUB_REPOSITORY -D tmpdir -p $implementation.$last_successful_at.\*.bsdzip -- $resbucket; then
       : retrieve cache
@@ -106,14 +149,16 @@ checkout-asset() {
 commit-asset() {
   setopt localoptions
   setopt localtraps
-  trap 'printf '```%s\n%s\n%s\n```' $(( accumulated_errors + 1 )) ${last_successful_at} ${last_md5meta:--} | gh release edit -R $GITHUB_REPOSITORY -F - -- $resbucket; return 1' ZERR
-  ! [[ -f errout ]]
+  trap "printf "\''```\n%s\n%s\n%s\n```'\'' $(( accumulated_errors + 1 )) ${last_successful_at} ${last_md5meta:--} | gh release edit -R $GITHUB_REPOSITORY -F - -- $resbucket; return 1' ZERR
+  ls
+  pwd
+  [[ ! -f errout ]]
   mkdir commit-stage
   cd worktree
   setopt globdots
   local +x ts=$(date +%s)
   local +x md5meta= p
-  du -0abD -- * | grep -zve '\.json$' | LC_ALL=C sort -zu | md5sum - | IFS=' ' read -r md5meta p
+  du -0abD -- * | grep -zvEe '\.(json|atom\.xml)$' | LC_ALL=C sort -zu | md5sum - | IFS=' ' read -r md5meta p
 
   if [[ "$last_md5meta" != $md5meta ]] {
     function {
@@ -121,20 +166,28 @@ commit-asset() {
       setopt extendedglob nullglob
       local -a t=(*(.) */*(.) */*/*(.) */*/*(/))
       [[ ${#t} -gt 0 ]]
-      printf '%s\0' $t | REO_BASEFN=../commit-stage/$implementation.$ts.preozip -
+      printf '%s\0' $t | grep -zve '\.atom\.xml$' | REO_BASEFN=../commit-stage/$implementation.$ts.p reozip -
     }
     cd ..
     cd commit-stage
     if [[ "$require_create_release" == 1 ]] {
-      gh release create -R $GITHUB_REPOSITORY --draft --target 63da79a3e51fc466a4a9f5629c8f125bb87bc653 -- $resbucket
-      if [[ $resscheme = cw ]] {
-        gh release edit -R $GITHUB_REPOSITORY --title "$(jq -r '. | keys[]' -- ../worktree/*/search.json)" -- $resbucket
-      }
+      gh release create -R $GITHUB_REPOSITORY --draft --target 63da79a3e51fc466a4a9f5629c8f125bb87bc653 --title $resscheme/${${${:-"$(jq -r '. | keys[0]' -- ../worktree/*/search.json)"}:-$resannot}:-$resid} -- $resbucket
     }
     for f (*) {
       gh release upload -R $GITHUB_REPOSITORY -- $resbucket $f
     }
-    printf '```\n%s\n%s\n%s\n```\n' 0 $ts $md5meta | gh release edit -F - -R $GITHUB_REPOSITORY -- $resbucket
+    find ../worktree -type f -name '?*.atom.xml' -print0 | \
+      xargs -0r gh release upload -R $GITHUB_REPOSITORY --clobber -- $resbucket
+
+    printf '```\n%s\n%s\n%s\n```\n%s\n' 0 $ts $md5meta '(*[log](https://github.com/'$GITHUB_REPOSITORY'/actions/runs/'$GITHUB_RUN_ID')*)' | gh release edit -F - -R $GITHUB_REPOSITORY -- $resbucket
+
+    local -a prevarcs=( $( gh release view -R $GITHUB_REPOSITORY --json assets -- $resbucket | jq -r '.assets[].name' | glob $implementation.'*'.bsdzip | globv $implementation.$ts.'*'.bsdzip ) )
+    if [[ ${#prevarcs} -gt 0 ]]; then
+      local +x f; for f in $prevarcs; do
+        sleep 2
+        gh release delete-asset -R $GITHUB_REPOSITORY -- $resbucket $f
+      done
+    fi
   } else {
     : md5meta unchanged.
     cancel
@@ -143,13 +196,66 @@ commit-asset() {
   #cd ..
 }
 
+_invoke-rssgen() {
+  case "$resscheme" in
+    (b22-h5rss)
+      b22rss.zsh
+      ;;
+    (kk-pchtmlrss)
+      kkrss.zsh
+      ;;
+    (txdmrss)
+      txdmrss.zsh
+      ;;
+    (*)
+      return 1
+      ;;
+  esac
+}
+
+_invoke-onecomic() {
+  onecomic -s ${resscheme:/b22/bilibili} -id $resid --all -o ./||return $?
+}
+
+_invoke-gallery-dl() {
+  local +x url=$resid
+  if [[ "$resscheme" == weibo ]]; then
+    if [[ "$resid" == ?*/?* ]]; then
+      url="https://weibo.com/$resid"
+    else
+      url="https://weibo.com/u/$resid?tabtype=album"
+    fi
+  fi
+
+  find -regextype posix-extended -mindepth 4 -maxdepth 4 -type f -regex '.*/[0-9]{12}\.[^/]+/[0-9]{2}#[^/]+$' -print0 | xargs -0r perl-rename -- 's%/([0-9]{12}\.[^/]+)/([0-9]{2}#[^/]+)$%/$1#$2%'
+  find -mindepth 1 -type d -empty -delete
+
+  if [[ "$resseed" = true ]]; then resseed=; fi
+  timeout -s INT --foreground 3.8h gallery-dl -D $PWD -o 'directory=["{category}","{user[id]}"]' -f '{status[date]:%Y%m%d%H%M}.{status[mblogid]}#{num:>02}#{filename}.{extension}' --write-metadata ${resseed:+-T} ${resseed:+20} --no-part --chunk-size 16384k -R 9 -- $url
+  if ! [[ $? == 0 || $? == 124 ]]; then
+    return 1
+  fi
+  find -type f -name '*.json' -not -name '*#01#*.json' -print0 | xargs -0r rm --
+
+  find -regextype posix-extended -mindepth 3 -maxdepth 3 -type f -regex '.*/[0-9]{12}\.[^/]#[0-9]{2}#[^/]+$' -print0 | xargs -0r perl-rename -- 's%/([0-9]{12}\.[^/]+)#([0-9]{2}#[^/]+)$%/$1/$2%'
+
+  rdfind -makesymlinks true -makeresultsfile false .
+  local +x count=
+  find -type f -not -name '*.json' -print | wc -l | read -r count
+  print -r -- $count data files found in directory tree.
+}
+
 _invoke-cejs() {
-  node ../implementation/comic.*/${${${${resscheme:/nvcn/dongman}:/nvtw/webtoon}:/txdm/qq}:/cw/ComicWalker}.js ${resid} recheck=$(if [[ $resscheme == cw ]]; then echo true; else echo multi_parts_changed; fi) archive_images=false
+  node ../implementation/comic.*/${${${${${resscheme:/nvcn/dongman}:/nvtw/webtoon}:/txdm/qq}:/cw/ComicWalker}:/b22/bilibili}.js ${resid} recheck=$(if [[ $resscheme == cw ]]; then echo true; else echo multi_parts_changed; fi) archive_images=false||return $?
 }
 
 invoke() {
   cd worktree
-  _invoke-$implementation "${(@)argv}" || { [[ "$accumulated_errors" != 1 ]]; touch ../errout }
+  if ! eval _invoke-${(q)implementation} '"${(@)argv}"'; then
+    [[ "$accumulated_errors" != 1 ]]
+    touch ../errout
+  fi
+  find -mindepth 1 -type d -empty -delete
 }
 
 "${(@)argv}"

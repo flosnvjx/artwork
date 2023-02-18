@@ -18,6 +18,9 @@ on:
         type: choice
         options:
           - cejs
+          - onecomic
+          - gallery-dl
+          - rssgen
         default: 'cejs'
         required: true
       resid:
@@ -25,21 +28,29 @@ on:
         required: true
       resannot:
         type: string
+      resseed:
+        type: choice
+        options:
+          - true
+          - false
+        default: false
       storage:
         type: choice
         default: 'release-asset'
         options:
           - release-asset
         required: true
-concurrency: update
+concurrency: update.
 name: update()
 ## *name: ensure that there is no 'string' in expression
-run-name: update.${{ inputs.implementation }}(${{ inputs.resid }}#${{ inputs.resannot }})
+run-name: update.${{ inputs.implementation }}(${{ inputs.resannot }}#${{ inputs.resid }})
 defaults:
   run:
     shell: bash
 env:
   resid: ${{ inputs.resid }}
+  resannot: ${{ inputs.resannot }}
+  resseed: ${{ inputs.resseed }}
   implementation: ${{ inputs.implementation }}
   GH_TOKEN: ${{ github.token }}
 permissions:
@@ -60,20 +71,31 @@ jobs:
   main:
     runs-on: ubuntu-latest
     steps:
-      - if: inputs.implementation == 'cejs'
+      - if: inputs.implementation == 'cejs' || inputs.implementation == 'rssgen'
         uses: actions/cache@v3
         with:
           path: |
             implementation
+          key: implementation.${{ inputs.implementation }}
+      - if: inputs.implementation == 'rssgen'
+        run: |
+          sudo apt update&&sudo apt install -qqq gojq libxml2-utils icu-devtools
+      - if: inputs.implementation == 'onecomic' || inputs.implementation == 'gallery-dl'
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.local/lib/python3.*
+            ~/.local/bin
           key: implementation.${{ inputs.implementation }}
       - uses: actions/checkout@v3
         with:
           path: repo
       - run: |
           git clone --depth 1 --single-branch https://github.com/flosnvjx/scriptbase ~/.scriptbase
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
           echo "$HOME/.scriptbase" >> $GITHUB_PATH
           echo "$GITHUB_WORKSPACE/repo/scripts" >> $GITHUB_PATH
-          sudo apt update&&sudo apt install -qqq zsh libarchive-tools
+          sudo apt update&&sudo apt install -qqq zsh libarchive-tools trickle rdfind
       - env:
           GH_TOKEN: 0
           GITHUB_TOKEN: 0

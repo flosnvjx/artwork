@@ -1,7 +1,8 @@
 on:
   workflow_dispatch:
   schedule:
-    - cron: '30 13 * * 2,4,6'
+    - cron: '24 8,18 * * 1,3,5'
+    - cron: '03 6,16 * * 2,4,6'
 name: update-trigger()
 defaults:
   run:
@@ -25,7 +26,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - run: sudo apt update&&sudo apt install zsh
+      - run: sudo apt update&&sudo apt install zsh libarchive-tools
       - run: scripts/update-trigger trigger
         env:
           GH_TOKEN: ${{ github.token }}
