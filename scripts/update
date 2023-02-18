@@ -68,37 +68,38 @@ checkout-asset() {
         bsdtar -xf $bsdzip -C worktree
       done
       fi
+      rm -rf tmpdir
   fi
   if [[ ${#last_md5meta} == 32 ]] {
     print -r -- last_md5meta=$last_md5meta >> $GITHUB_ENV
     print -r -- last_successful_at=$last_successful_at >> $GITHUB_ENV
   }
   print -r -- accumulated_errors=$accumulated_errors >> $GITHUB_ENV
-  mkdir ziptree
-  case $implementation {
-    (cejs)
-      case $resscheme {
-        (txdm)
-          ln -sr $PWD/worktree/qq -T ziptree/$resscheme
-        ;;
-        (nvcn)
-          ln -sr $PWD/worktree/dongman -T ziptree/$resscheme
-        ;;
-        (nvtw)
-          ln -sr $PWD/worktree/webtoon -T ziptree/$resscheme
-        ;;
-        (cw)
-          ln -sr $PWD/worktree/ComicWalker -T ziptree/$resscheme
-        ;;
-        (?*)
-          ln -sr $PWD/worktree/$resscheme -t ziptree
-        ;;
-      }
-      ;;
-    (*) : undefined
-      false
-      ;;
-  }
+#  mkdir ziptree
+#  case $implementation {
+#    (cejs)
+#      case $resscheme {
+#        (txdm)
+#          ln -sr $PWD/worktree/qq -T ziptree/$resscheme
+#        ;;
+#        (nvcn)
+#          ln -sr $PWD/worktree/dongman -T ziptree/$resscheme
+#        ;;
+#        (nvtw)
+#          ln -sr $PWD/worktree/webtoon -T ziptree/$resscheme
+#        ;;
+#        (cw)
+#          ln -sr $PWD/worktree/ComicWalker -T ziptree/$resscheme
+#        ;;
+#        (?*)
+#          ln -sr $PWD/worktree/$resscheme -t ziptree
+#        ;;
+#      }
+#      ;;
+#    (*) : undefined
+#      false
+#      ;;
+#  }
 }
 
 commit-asset() {
@@ -107,7 +108,7 @@ commit-asset() {
     false
   }
   mkdir commit-stage
-  cd ziptree
+  cd worktree
   setopt globdots
   local +x ts=$(date +%s)
   local +x md5meta= p
@@ -119,7 +120,7 @@ commit-asset() {
     cd ..
     cd commit-stage
     if [[ "$require_create_release" == 1 ]] {
-      gh release create -R $GITHUB_REPOSITORY --draft --target 63da79a3e51fc466a4a9f5629c8f125bb87bc653 -- $resbucket | cat
+      gh release create -R $GITHUB_REPOSITORY --draft --target 63da79a3e51fc466a4a9f5629c8f125bb87bc653 -- $resbucket
     }
     for f (*) {
       gh release upload -R $GITHUB_REPOSITORY -- $resbucket $f
