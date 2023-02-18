@@ -62,7 +62,7 @@ checkout-asset() {
     gh release view -R $GITHUB_REPOSITORY --json body -- $resbucket || \
     echo require_create_release=1 >> $GITHUB_ENV
   } | jq -j .body | sed -znEe '/^```\n[0-9]+\n[0-9]+\n[-0-9a-f]+\n```\n$/s%^```\n([0-9]+)\n([0-9]+)\n([-0-9a-f]+)\n```\n$%\1 \2 \3\n% p' | read -r accumulated_errors last_successful_at last_md5meta && [[ $last_successful_at -gt 0 ]] && {
-    if [[ $(( "$(date +%s)" - $last_successful_at )) -le $(( 60*60*24*1 )) ]] cancel
+    if [[ $(( $(date +%s) - $last_successful_at )) -le $(( 60*60*24*1 )) ]] cancel
     function {
       setopt localoptions
       setopt rcexpandparam
