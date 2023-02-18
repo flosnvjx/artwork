@@ -61,17 +61,13 @@ checkout-asset() {
   if {
     gh release view -R $GITHUB_REPOSITORY --json body -- $resbucket || \
     echo require_create_release=1 >> $GITHUB_ENV
-  } | jq -j .body | sed -znEe '/^```\n[0-9]+\n[0-9]+\n[-0-9a-f]+\n```\n$/s%^```\n([0-9]+)\n([0-9]+)\n([-0-9a-f]+)\n```\n$%\1 \2 \3\n% p' | read -r accumulated_errors last_successful_at last_md5meta && [[ $last_successful_at -gt 0 ]] && {
-      gh release view -R $GITHUB_REPOSITORY --json assets -- $resbucket | jq -r .assets'[]'.name
-      command -v flhgrep
-      matched_assets=($(gh release view -R $GITHUB_REPOSITORY --json assets -- $resbucket | jq -r .assets'[]'.name | flhgrep $implementation.$last_successful_at. | flegrep .bsdzip))
-      [[ ${#matched_assets} -gt 0 ]]
-  }; then
+  } | jq -j .body | sed -znEe '/^```\n[0-9]+\n[0-9]+\n[-0-9a-f]+\n```\n$/s%^```\n([0-9]+)\n([0-9]+)\n([-0-9a-f]+)\n```\n$%\1 \2 \3\n% p' | read -r accumulated_errors last_successful_at last_md5meta && [[ $last_successful_at -gt 0 ]]; then
       mkdir tmpdir
-      gh release download -R $GITHUB_REPOSITORY -D tmpdir -p $implementation.$last_successful_at.\*.bsdzip -- $resbucket
+      if gh release download -R $GITHUB_REPOSITORY -D tmpdir -p $implementation.$last_successful_at.\*.bsdzip -- $resbucket; then
       local +x bsdzip; for bsdzip in tmpdir/*.bsdzip; do
         bsdtar -xf $bsdzip -C worktree
       done
+      fi
   fi
   if [[ ${#last_md5meta} == 32 ]] {
     print -r -- last_md5meta=$last_md5meta >> $GITHUB_ENV
