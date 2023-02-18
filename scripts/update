@@ -121,7 +121,7 @@ commit-asset() {
       setopt extendedglob nullglob
       local -a t=(*(.) */*(.) */*/*(.) */*/*(/))
       [[ ${#t} -gt 0 ]]
-      printf '%s\0' $t | REO_BASEFN=../commit-stage/$implementation.$ts.preozip -
+      printf '%s\0' $t | REO_BASEFN=../commit-stage/$implementation.$ts.p reozip -
     }
     cd ..
     cd commit-stage
