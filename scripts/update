@@ -128,7 +128,7 @@ commit-asset() {
     if [[ "$require_create_release" == 1 ]] {
       gh release create -R $GITHUB_REPOSITORY --draft --target 63da79a3e51fc466a4a9f5629c8f125bb87bc653 -- $resbucket
       if [[ $resscheme = cw ]] {
-        gh release edit -R $GITHUB_REPOSITORY --title "$(jq -r '. | keys[]' -- ../worktree/*/search.json)" -- $resbucket
+        gh release edit -R $GITHUB_REPOSITORY --title ${${:-"$(jq -r '. | keys[]' -- ../worktree/*/search.json)"}:-$resannot} -- $resbucket
       }
     }
     for f (*) {
