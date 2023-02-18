@@ -1,0 +1,31 @@
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '30 13 * * 2,3,4'
+name: update-trigger()
+defaults:
+  run:
+    shell: bash
+permissions:
+  actions: write
+  checks: none
+  contents: write
+  deployments: none
+  id-token: none
+  issues: none
+  discussions: none
+  packages: none
+  pages: none
+  pull-requests: none
+  repository-projects: none
+  security-events: none
+  statuses: write
+jobs:
+  main:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - run: sudo apt update&&sudo apt install zsh
+      - run: scripts/update-trigger trigger
+        env:
+          GH_TOKEN: ${{ github.token }}

@@ -1,7 +1,0 @@
-on:
-  workflow_dispatch:
-jobs:
-  pp:
-    uses: ./.github/workflows/update.yml
-    with:
-      resid: ppppp

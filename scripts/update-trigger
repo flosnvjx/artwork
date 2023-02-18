@@ -16,6 +16,7 @@ trigger() {
      if [[ ${#triggered} -ge 2 ]] {
        return 0
      }
+     sleep 4
      if gh release view -R $GITHUB_REPOSITORY --json body -- ${resschid#*:} | jq -j .body | sed -znEe '/^```\n[0-9]+\n[0-9]+\n[-0-9a-f]+\n```\n$/s%^```\n([0-9]+)\n([0-9]+)\n([-0-9a-f]+)\n```\n$%\1 \2\n% p' | read -r counted_errs last_success; then
        if [[ $counted_errs -le 2 ]] && [[ $(( $(date +%s) - $last_success )) -ge ${min_period_by_resscheme[${resschid%%:*}]:-${min_period_default}} ]]; then
          sleep 10
