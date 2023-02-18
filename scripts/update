@@ -64,6 +64,7 @@ checkout-asset() {
   } | jq -j .body | sed -znEe '/^```\n[0-9]+\n[0-9]+\n[-0-9a-f]+\n```\n$/s%^```\n([0-9]+)\n([0-9]+)\n([-0-9a-f]+)\n```\n$%\1 \2 \3\n% p' | read -r accumulated_errors last_successful_at last_md5meta && [[ $last_successful_at -gt 0 ]]; then
       mkdir tmpdir
       if gh release download -R $GITHUB_REPOSITORY -D tmpdir -p $implementation.$last_successful_at.\*.bsdzip -- $resbucket; then
+      : retrieve cache
       local +x bsdzip; for bsdzip in tmpdir/*.bsdzip; do
         bsdtar -xf $bsdzip -C worktree
       done
@@ -112,7 +113,7 @@ commit-asset() {
   setopt globdots
   local +x ts=$(date +%s)
   local +x md5meta= p
-  du -abD -- * | LC_ALL=C sort -z | md5sum - | IFS=' ' read -r md5meta p
+  du -0abD -- * | LC_ALL=C sort -zu | md5sum - | IFS=' ' read -r md5meta p
 
   if [[ "$last_md5meta" != $md5meta ]] {
     pwd
