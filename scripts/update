@@ -83,10 +83,10 @@ checkout-asset() {
     }
   }
   if [[ ${#last_md5meta} == 32 ]] {
-    last_md5meta=$last_md5meta >> $GITHUB_ENV
-    last_successful_at=$last_successful_at >> $GITHUB_ENV
+    print -r -- last_md5meta=$last_md5meta >> $GITHUB_ENV
+    print -r -- last_successful_at=$last_successful_at >> $GITHUB_ENV
   }
-  accumulated_errors=$accumulated_errors >> $GITHUB_ENV
+  print -r -- accumulated_errors=$accumulated_errors >> $GITHUB_ENV
   mkdir ziptree
   case $implementation {
     (cejs)
