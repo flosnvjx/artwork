@@ -34,7 +34,7 @@ on:
 concurrency: update
 name: update()
 ## *name: ensure that there is no 'string' in expression
-run-name: update.${{ inputs.implementation }}(${{ inputs.resid }}#${{ inputs.resannot }})
+run-name: update.${{ inputs.implementation }}(${{ inputs.resannot }}#${{ inputs.resid }})
 defaults:
   run:
     shell: bash

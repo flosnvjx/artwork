@@ -7,11 +7,11 @@ trigger() {
   local +x min_period_default=$(( 60*60*24*8 ))
   local -A min_period_by_resscheme
   min_period_by_resscheme=(
-    cw $((60*60*24*28))
-    nvcn $((60*60*24*10))
-    nvtw $((60*60*24*14))
+    cw $((60*60*24*21))
+    nvcn $((60*60*24*14))
+    nvtw $((60*60*24*10))
   )
-  shuf -- mgutab | LC_ALL=C sort -u | while IFS=$'\t' read -r resschid resannot resperiod; do
+  shuf -- mgutab | grep -ve '^#' | LC_ALL=C sort -u | while IFS=$'\t' read -r resschid resannot resperiod; do
      local +x -i counted_errs last_success
      if [[ ${#triggered} -ge 2 ]] {
        return 0
