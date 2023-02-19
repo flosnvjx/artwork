@@ -11,7 +11,7 @@ trigger() {
     nvcn $((60*60*24*14))
     nvtw $((60*60*24*10))
   )
-  shuf -- mgutab | grep -ve '^#' | LC_ALL=C sort -u | while IFS=$'\t' read -r resschid resannot resperiod; do
+  sort -u mgutab | shuf | grep -ve '^#' | tee /dev/fd/2 | while IFS=$'\t' read -r resschid resannot resperiod; do
      local +x -i counted_errs last_success
      if [[ ${#triggered} -ge 2 ]] {
        return 0
