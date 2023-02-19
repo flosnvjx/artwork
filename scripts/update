@@ -135,6 +135,13 @@ commit-asset() {
       gh release upload -R $GITHUB_REPOSITORY -- $resbucket $f
     }
     printf '```\n%s\n%s\n%s\n```\n' 0 $ts $md5meta | gh release edit -F - -R $GITHUB_REPOSITORY -- $resbucket
+
+    local -a prevarcs=( $( gh release view -R $GITHUB_REPOSITORY --json assets -- $resbucket | jq -r '.assets[].name' | glob $implementation.'*'.bsdzip | globv $implementation.$ts.'*'.bsdzip ) )
+    if [[ ${#prevarcs} -gt 0]]; then
+      local +f; for f in $prevarcs; do
+        gh release delete-asset -R $GITHUB_REPOSITORY -- $resbucket $f
+      done
+    fi
   } else {
     : md5meta unchanged.
     cancel
