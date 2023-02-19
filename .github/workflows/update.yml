@@ -40,6 +40,7 @@ defaults:
     shell: bash
 env:
   resid: ${{ inputs.resid }}
+  resannot: ${{ inputs.resannot }}
   implementation: ${{ inputs.implementation }}
   GH_TOKEN: ${{ github.token }}
 permissions:
