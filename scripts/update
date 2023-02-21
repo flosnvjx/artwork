@@ -39,6 +39,9 @@ set-resenv() {
     (cw:?*|ComicWalker:?*|comicwalker:?*)
       export resscheme=cw
       ;;
+    (b23:?*|bili:?*|bilibili:?*|bman:?*)
+      export resscheme=b23
+      ;;
     (?*:?*)
       export resscheme=${resid%%:*}
       ;;
@@ -148,7 +151,7 @@ commit-asset() {
 }
 
 _invoke-cejs() {
-  node ../implementation/comic.*/${${${${resscheme:/nvcn/dongman}:/nvtw/webtoon}:/txdm/qq}:/cw/ComicWalker}.js ${resid} recheck=$(if [[ $resscheme == cw ]]; then echo true; else echo multi_parts_changed; fi) archive_images=false
+  node ../implementation/comic.*/${${${${${resscheme:/nvcn/dongman}:/nvtw/webtoon}:/txdm/qq}:/cw/ComicWalker}:/b23/bilibili}.js ${resid} recheck=$(if [[ $resscheme == cw ]]; then echo true; else echo multi_parts_changed; fi) archive_images=false
 }
 
 invoke() {
