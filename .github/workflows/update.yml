@@ -74,7 +74,7 @@ jobs:
           git clone --depth 1 --single-branch https://github.com/flosnvjx/scriptbase ~/.scriptbase
           echo "$HOME/.scriptbase" >> $GITHUB_PATH
           echo "$GITHUB_WORKSPACE/repo/scripts" >> $GITHUB_PATH
-          sudo apt update&&sudo apt install -qqq zsh libarchive-tools
+          sudo apt update&&sudo apt install -qqq zsh libarchive-tools trickle
       - env:
           GH_TOKEN: 0
           GITHUB_TOKEN: 0
