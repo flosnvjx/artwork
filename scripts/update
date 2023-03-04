@@ -118,6 +118,8 @@ commit-asset() {
   setopt localoptions
   setopt localtraps
   trap "printf "\''```%s\n%s\n%s\n```'\'' $(( accumulated_errors + 1 )) ${last_successful_at} ${last_md5meta:--} | gh release edit -R $GITHUB_REPOSITORY -F - -- $resbucket; return 1' ZERR
+  ls
+  pwd
   [[ ! -f errout ]]
   mkdir commit-stage
   cd worktree
