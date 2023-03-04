@@ -161,7 +161,7 @@ commit-asset() {
 }
 
 _invoke-onecomic() {
-  onecomic -s ${resscheme:/b22/bilibili} -id $resid -all -o ./
+  onecomic -s ${resscheme:/b22/bilibili} -id $resid --all -o ./
 }
 
 _invoke-cejs() {
