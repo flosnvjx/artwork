@@ -67,11 +67,19 @@ jobs:
           path: |
             implementation
           key: implementation.${{ inputs.implementation }}
+      - if: inputs.implementation == 'onecomic'
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.local/lib/python3.*
+            ~/.local/bin
+          key: implementation.${{ inputs.implementation }}
       - uses: actions/checkout@v3
         with:
           path: repo
       - run: |
           git clone --depth 1 --single-branch https://github.com/flosnvjx/scriptbase ~/.scriptbase
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
           echo "$HOME/.scriptbase" >> $GITHUB_PATH
           echo "$GITHUB_WORKSPACE/repo/scripts" >> $GITHUB_PATH
           sudo apt update&&sudo apt install -qqq zsh libarchive-tools trickle

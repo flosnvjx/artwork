@@ -7,6 +7,12 @@ cancel() {
 }
 
 ## setup
+setup-onecomic() {
+  if ! onecomic --version; then
+    pip install --user onecomic
+  fi
+}
+
 setup-cejs() {
   if [[ ! -d implementation ]] {
     git clone -qb flos --depth 1 --single-branch https://github.com/flosnvjx/work_crawler.git/ implementation
@@ -17,6 +23,7 @@ setup-cejs() {
 setup() {
   case "$implementation" {
     (cejs) setup-cejs;;
+    (onecomic) setup-onecomic;;
     ("") setup-cejs
          print -r -- implementation=cejs >> $GITHUB_ENV
          ;;
@@ -109,7 +116,7 @@ checkout-asset() {
 commit-asset() {
   setopt localoptions
   setopt localtraps
-  trap 'printf '```%s\n%s\n%s\n```' $(( accumulated_errors + 1 )) ${last_successful_at} ${last_md5meta:--} | gh release edit -R $GITHUB_REPOSITORY -F - -- $resbucket; return 1' ZERR
+  trap "printf "\''```%s\n%s\n%s\n```'\'' $(( accumulated_errors + 1 )) ${last_successful_at} ${last_md5meta:--} | gh release edit -R $GITHUB_REPOSITORY -F - -- $resbucket; return 1' ZERR
   ! [[ -f errout ]]
   mkdir commit-stage
   cd worktree
@@ -148,6 +155,10 @@ commit-asset() {
     sleep 999
   }
   #cd ..
+}
+
+_invoke-onecomic() {
+  onecomic -s ${resscheme:/b22/bilibili} -id $resid -all -o ./
 }
 
 _invoke-cejs() {
