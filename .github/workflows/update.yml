@@ -18,6 +18,7 @@ on:
         type: choice
         options:
           - cejs
+          - onecomic
         default: 'cejs'
         required: true
       resid:
