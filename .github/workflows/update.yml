@@ -19,6 +19,7 @@ on:
         options:
           - cejs
           - onecomic
+          - gallery-dl
         default: 'cejs'
         required: true
       resid:
@@ -68,7 +69,7 @@ jobs:
           path: |
             implementation
           key: implementation.${{ inputs.implementation }}
-      - if: inputs.implementation == 'onecomic'
+      - if: inputs.implementation == 'onecomic' || inputs.implementation == 'gallery-dl'
         uses: actions/cache@v3
         with:
           path: |

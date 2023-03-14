@@ -10,6 +10,7 @@ trigger() {
     cw $((60*60*24*21))
     nvcn $((60*60*24*14))
     nvtw $((60*60*24*10))
+    weibo $((60*60*18))
   )
   sort -u mgutab | shuf | grep -vEe '(^$|^#)' | tee /dev/fd/2 | while IFS=$'\t' read -r resschid resannot resperiod; do
      local +x -i counted_errs last_success
@@ -20,6 +21,8 @@ trigger() {
      case "$resschid" in
        (b22:*)
          implementation=onecomic;;
+       (weibo:*)
+         implementation=gallery-dl;;
        (*)
          implementation=cejs;;
      esac

@@ -14,6 +14,12 @@ setup-onecomic() {
   fi
 }
 
+setup-gallery-dl() {
+  if ! gallery-dl --version; then
+    pip install --user -U gallery-dl
+  fi
+}
+
 setup-cejs() {
   if [[ ! -d implementation ]] {
     git clone -qb flos --depth 1 --single-branch https://github.com/flosnvjx/work_crawler.git/ implementation
@@ -25,6 +31,7 @@ setup() {
   case "$implementation" {
     (cejs) setup-cejs;;
     (onecomic) setup-onecomic;;
+    (gallery-dl) setup-gallery-dl;;
     ("") setup-cejs
          print -r -- implementation=cejs >> $GITHUB_ENV
          ;;
@@ -162,6 +169,11 @@ commit-asset() {
 
 _invoke-onecomic() {
   onecomic -s ${resscheme:/b22/bilibili} -id $resid --all -o ./
+}
+
+_invoke-gallery-dl() {
+  timeout -s INT --foreground 3.8h gallery-dl -D $PWD -o 'directory=["{category}","{user[id]}:{user[screen_name]}"]' -f '{status[date]:%Y%m%d%H%M}.{status[mblogid]}#{num:>02}#{filename}.{extension}' --write-metadata -T 36 --no-check-certificate --no-part --chunk-size 4096k -R 9 -- $resid || [[ $? == 124 ]]
+  find -type f -name '*.json' -not -name '*#01#*.json' -print0 | xargs -0r rm --
 }
 
 _invoke-cejs() {
