@@ -185,6 +185,8 @@ _invoke-gallery-dl() {
   find -type f -name '*.json' -not -name '*#01#*.json' -print0 | xargs -0r rm --
 
   find -regextype posix-extended -mindepth 3 -maxdepth 3 -type f -regex '.*/[0-9]{12}\.[^/]#[0-9]{2}#[^/]+$' -print0 | xargs -0r perl-rename -- 's%/([0-9]{12}\.[^/]+)#([0-9]{2}#[^/]+)$%/$1/$2%'
+
+  rdfind -makesymlinks true -makeresultsfile false .
 }
 
 _invoke-cejs() {

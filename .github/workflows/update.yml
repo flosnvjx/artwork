@@ -84,7 +84,7 @@ jobs:
           echo "$HOME/.local/bin" >> $GITHUB_PATH
           echo "$HOME/.scriptbase" >> $GITHUB_PATH
           echo "$GITHUB_WORKSPACE/repo/scripts" >> $GITHUB_PATH
-          sudo apt update&&sudo apt install -qqq zsh libarchive-tools trickle
+          sudo apt update&&sudo apt install -qqq zsh libarchive-tools trickle rdfind
       - env:
           GH_TOKEN: 0
           GITHUB_TOKEN: 0
