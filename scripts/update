@@ -172,7 +172,12 @@ _invoke-onecomic() {
 }
 
 _invoke-gallery-dl() {
-  timeout -s INT --foreground 3.8h gallery-dl -D $PWD -o 'directory=["{category}","{user[id]}:{user[screen_name]}"]' -f '{status[date]:%Y%m%d%H%M}.{status[mblogid]}#{num:>02}#{filename}.{extension}' --write-metadata -T 36 --no-check-certificate --no-part --chunk-size 4096k -R 9 -- $resid || [[ $? == 124 ]]
+  local +x url=$resid
+  if [[ "$resscheme" == weibo ]]; then
+    url="https://weibo.com/u/$resid?tabtype=album"
+  fi
+
+  timeout -s INT --foreground 3.8h gallery-dl -D $PWD -o 'directory=["{category}","{user[id]}:{user[screen_name]}"]' -f '{status[date]:%Y%m%d%H%M}.{status[mblogid]}#{num:>02}#{filename}.{extension}' --write-metadata -T 37 --no-check-certificate --no-part --chunk-size 16384k -R 9 -- $url || [[ $? == 124 ]]
   find -type f -name '*.json' -not -name '*#01#*.json' -print0 | xargs -0r rm --
 }
 
