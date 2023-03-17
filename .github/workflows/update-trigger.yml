@@ -1,7 +1,8 @@
 on:
   workflow_dispatch:
   schedule:
-    - cron: '30 13 * * *'
+    - cron: '24 18 * * 1,3,5'
+    - cron: '03 16 * * 2,4,6'
 name: update-trigger()
 defaults:
   run:
