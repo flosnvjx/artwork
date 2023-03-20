@@ -1,6 +1,6 @@
-#!/usr/bin/zsh
-set -ex
+#!/bin/zsh
 setopt pipefail
+set -e -x
 
 cancel() {
   gh run cancel -R $GITHUB_REPOSITORY $GITHUB_RUN_ID
@@ -188,7 +188,10 @@ _invoke-gallery-dl() {
   find -regextype posix-extended -mindepth 4 -maxdepth 4 -type f -regex '.*/[0-9]{12}\.[^/]+/[0-9]{2}#[^/]+$' -print0 | xargs -0r perl-rename -- 's%/([0-9]{12}\.[^/]+)/([0-9]{2}#[^/]+)$%/$1#$2%'
   find -mindepth 1 -type d -empty -delete
 
-  timeout -s INT --preserve-status --foreground 3.8h gallery-dl -D $PWD -o 'directory=["{category}","{user[id]}"]' -f '{status[date]:%Y%m%d%H%M}.{status[mblogid]}#{num:>02}#{filename}.{extension}' --write-metadata -T 100 --no-check-certificate --no-part --chunk-size 16384k -R 9 -- $url
+  timeout -s INT --foreground 3.8h gallery-dl -D $PWD -o 'directory=["{category}","{user[id]}"]' -f '{status[date]:%Y%m%d%H%M}.{status[mblogid]}#{num:>02}#{filename}.{extension}' --write-metadata -T 100 --no-check-certificate --no-part --chunk-size 16384k -R 9 -- $url
+  if [[ $? != 0 && $? != 124 ]]; then
+    return $?
+  fi
   find -type f -name '*.json' -not -name '*#01#*.json' -print0 | xargs -0r rm --
 
   find -regextype posix-extended -mindepth 3 -maxdepth 3 -type f -regex '.*/[0-9]{12}\.[^/]#[0-9]{2}#[^/]+$' -print0 | xargs -0r perl-rename -- 's%/([0-9]{12}\.[^/]+)#([0-9]{2}#[^/]+)$%/$1/$2%'
@@ -202,7 +205,10 @@ _invoke-cejs() {
 
 invoke() {
   cd worktree
-  _invoke-$implementation "${(@)argv}" || { [[ "$accumulated_errors" != 1 ]]; touch ../errout; pwd}
+  if ! eval _invoke-${(q)implementation} '"${(@)argv}"'; then
+    [[ "$accumulated_errors" != 1 ]]
+    touch ../errout
+  fi
   find -mindepth 1 -type d -empty -delete
 }
 
