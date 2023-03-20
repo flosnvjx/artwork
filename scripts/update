@@ -189,8 +189,8 @@ _invoke-gallery-dl() {
   find -mindepth 1 -type d -empty -delete
 
   timeout -s INT --foreground 3.8h gallery-dl -D $PWD -o 'directory=["{category}","{user[id]}"]' -f '{status[date]:%Y%m%d%H%M}.{status[mblogid]}#{num:>02}#{filename}.{extension}' --write-metadata -T 100 --no-check-certificate --no-part --chunk-size 16384k -R 9 -- $url
-  if [[ $? != 0 && $? != 124 ]]; then
-    return $?
+  if ! [[ $? == 0 || $? == 124 ]]; then
+    return 1
   fi
   find -type f -name '*.json' -not -name '*#01#*.json' -print0 | xargs -0r rm --
 
