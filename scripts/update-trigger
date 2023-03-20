@@ -38,7 +38,7 @@ trigger() {
      }
      sleep 4
      case "$resschid" in
-       (b22:*)
+       (b22:*|qq:*)
          implementation=onecomic;;
        (weibo:*)
          implementation=gallery-dl;;
