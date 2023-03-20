@@ -172,7 +172,7 @@ commit-asset() {
 }
 
 _invoke-onecomic() {
-  onecomic -s ${resscheme:/b22/bilibili} -id $resid --all -o ./
+  onecomic -s ${resscheme:/b22/bilibili} -id $resid --all -o ./||return $?
 }
 
 _invoke-gallery-dl() {
@@ -200,7 +200,7 @@ _invoke-gallery-dl() {
 }
 
 _invoke-cejs() {
-  trickle -v -s -d 1536 -t 5 node ../implementation/comic.*/${${${${${resscheme:/nvcn/dongman}:/nvtw/webtoon}:/txdm/qq}:/cw/ComicWalker}:/b22/bilibili}.js ${resid} recheck=$(if [[ $resscheme == cw ]]; then echo true; else echo multi_parts_changed; fi) archive_images=false
+  trickle -v -s -d 1536 -t 5 node ../implementation/comic.*/${${${${${resscheme:/nvcn/dongman}:/nvtw/webtoon}:/txdm/qq}:/cw/ComicWalker}:/b22/bilibili}.js ${resid} recheck=$(if [[ $resscheme == cw ]]; then echo true; else echo multi_parts_changed; fi) archive_images=false||return $?
 }
 
 invoke() {
