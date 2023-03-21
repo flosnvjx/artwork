@@ -32,6 +32,7 @@ setup-rssgen() {
   path+=($PWD/implementation/{bin,cargo/bin,prefix/bin})
   export CARGO_INSTALL_ROOT=$PWD/implementation/cargo
   rw --help || cargo install rw
+  anewer --version || cargo install anewer
   go env GOBIN $PWD/implementation/bin
   dasel --version || go install github.com/tomwright/dasel/v2/cmd/dasel@latest
   pup --version || go install github.com/ericchiang/pup@master
