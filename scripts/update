@@ -44,6 +44,7 @@ setup-rssgen() {
   printf '%s\n' $PWD/implementation/bin >> $GITHUB_PATH
   printf '%s\n' $PWD/implementation/cargo/bin >> $GITHUB_PATH
   printf '%s\n' $PWD/implementation/prefix/bin >> $GITHUB_PATH
+  ls -R implementation
 }
 
 setup() {
@@ -195,6 +196,8 @@ commit-asset() {
 }
 
 _invoke-rssgen() {
+  echo $path
+  command -v rw
   case "$resscheme" in
     (b22-h5rss)
       b22rss.zsh
