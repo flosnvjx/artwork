@@ -34,6 +34,7 @@ setup-rssgen() {
   rw --help || cargo install rw
   go env GOBIN $PWD/implementation/bin
   dasel --version || go install github.com/tomwright/dasel/v2/cmd/dasel@latest
+  pup --version || go install github.com/ericchiang/pup@latest
   if ! sfeed_atom </dev/null >/dev/null; then
     local +x tmpd="$(mktemp -d)"
     curl -qgsfL https://codemadness.org/releases/sfeed/sfeed-1.7.tar.gz | tar -xzf - -C $tmpd --strip-components 1

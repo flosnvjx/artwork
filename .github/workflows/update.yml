@@ -72,7 +72,7 @@ jobs:
           key: implementation.${{ inputs.implementation }}
       - if: inputs.implementation == 'rssgen'
         run: |
-          sudo apt update&&sudo apt install -qqq gojq pup libxml2-utils
+          sudo apt update&&sudo apt install -qqq gojq libxml2-utils
       - if: inputs.implementation == 'onecomic' || inputs.implementation == 'gallery-dl'
         uses: actions/cache@v3
         with:
