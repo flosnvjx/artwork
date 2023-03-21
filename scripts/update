@@ -148,7 +148,7 @@ checkout-asset() {
 commit-asset() {
   setopt localoptions
   setopt localtraps
-  trap "printf "\''```%s\n%s\n%s\n```'\'' $(( accumulated_errors + 1 )) ${last_successful_at} ${last_md5meta:--} | gh release edit -R $GITHUB_REPOSITORY -F - -- $resbucket; return 1' ZERR
+  trap "printf "\''```\n%s\n%s\n%s\n```'\'' $(( accumulated_errors + 1 )) ${last_successful_at} ${last_md5meta:--} | gh release edit -R $GITHUB_REPOSITORY -F - -- $resbucket; return 1' ZERR
   ls
   pwd
   [[ ! -f errout ]]
@@ -180,7 +180,7 @@ commit-asset() {
 
     printf '```\n%s\n%s\n%s\n```\n%s\n' 0 $ts $md5meta '(*[log](https://github.com/'$GITHUB_REPOSITORY'/actions/runs/'$GITHUB_RUN_ID')*)' | gh release edit -F - -R $GITHUB_REPOSITORY -- $resbucket
 
-    local -a prevarcs=( $( gh release view -R $GITHUB_REPOSITORY --json assets -- $resbucket | jq -r '.assets[].name' | glob $implementation.'*'.bsdzip | globv $implementation.$ts.'*'.bsdzip | globv '*'.atom.xml ) )
+    local -a prevarcs=( $( gh release view -R $GITHUB_REPOSITORY --json assets -- $resbucket | jq -r '.assets[].name' | glob $implementation.'*'.bsdzip | globv $implementation.$ts.'*'.bsdzip ) )
     if [[ ${#prevarcs} -gt 0 ]]; then
       local +x f; for f in $prevarcs; do
         gh release delete-asset -R $GITHUB_REPOSITORY -- $resbucket $f
