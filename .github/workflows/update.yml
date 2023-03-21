@@ -20,6 +20,7 @@ on:
           - cejs
           - onecomic
           - gallery-dl
+          - rssgen
         default: 'cejs'
         required: true
       resid:
@@ -63,12 +64,15 @@ jobs:
   main:
     runs-on: ubuntu-latest
     steps:
-      - if: inputs.implementation == 'cejs'
+      - if: inputs.implementation == 'cejs' || inputs.implementation == 'rssgen'
         uses: actions/cache@v3
         with:
           path: |
             implementation
           key: implementation.${{ inputs.implementation }}
+      - if: inputs.implementation == 'rssgen'
+        run: |
+          sudo apt update&&sudo apt install -qqq gojq pup libxml2-utils
       - if: inputs.implementation == 'onecomic' || inputs.implementation == 'gallery-dl'
         uses: actions/cache@v3
         with:

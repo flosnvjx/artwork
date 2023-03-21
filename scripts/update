@@ -27,11 +27,29 @@ setup-cejs() {
   }
 }
 
+setup-rssgen() {
+  if [[ ! -d implementation ]]; then mkdir -p implementation/{cargo,bin,prefix}; fi
+  path+=($PWD/implementation/{bin,cargo/bin,prefix/bin})
+  export CARGO_INSTALL_ROOT=$PWD/implementation/cargo
+  rw --help || cargo install rw
+  go env GOBIN $PWD/implementation/bin
+  dasel --version || go install github.com/tomwright/dasel/v2/cmd/dasel@latest
+  if ! sfeed_atom </dev/null >/dev/null; then
+    local +x tmpd="$(mktemp -d)"
+    curl -qgsfL https://codemadness.org/releases/sfeed/sfeed-1.7.tar.gz | tar -xzf - -C $tmpd --strip-components 1
+    make PREFIX=$PWD/implementation/prefix -C $tmpd install
+  fi
+  printf '%s\n' $PWD/implementation/bin >> $GITHUB_PATH
+  printf '%s\n' $PWD/implementation/cargo/bin >> $GITHUB_PATH
+  printf '%s\n' $PWD/implementation/prefix/bin >> $GITHUB_PATH
+}
+
 setup() {
   case "$implementation" {
     (cejs) setup-cejs;;
     (onecomic) setup-onecomic;;
     (gallery-dl) setup-gallery-dl;;
+    (rssgen) setup-rssgen;;
     ("") setup-cejs
          print -r -- implementation=cejs >> $GITHUB_ENV
          ;;
@@ -137,7 +155,7 @@ commit-asset() {
   setopt globdots
   local +x ts=$(date +%s)
   local +x md5meta= p
-  du -0abD -- * | grep -zve '\.json$' | LC_ALL=C sort -zu | md5sum - | IFS=' ' read -r md5meta p
+  du -0abD -- * | grep -zvEe '\.(json|atom\.xml)$' | LC_ALL=C sort -zu | md5sum - | IFS=' ' read -r md5meta p
 
   if [[ "$last_md5meta" != $md5meta ]] {
     function {
@@ -145,7 +163,7 @@ commit-asset() {
       setopt extendedglob nullglob
       local -a t=(*(.) */*(.) */*/*(.) */*/*(/))
       [[ ${#t} -gt 0 ]]
-      printf '%s\0' $t | REO_BASEFN=../commit-stage/$implementation.$ts.p reozip -
+      printf '%s\0' $t | grep -zve '\.atom\.xml$' | REO_BASEFN=../commit-stage/$implementation.$ts.p reozip -
     }
     cd ..
     cd commit-stage
@@ -155,9 +173,12 @@ commit-asset() {
     for f (*) {
       gh release upload -R $GITHUB_REPOSITORY -- $resbucket $f
     }
+    find ../worktree -type f -name '?*.atom.xml' -print0 | \
+      xargs -0r gh release upload -R $GITHUB_REPOSITORY --clobber -- $resbucket
+
     printf '```\n%s\n%s\n%s\n```\n%s\n' 0 $ts $md5meta '(*[log](https://github.com/'$GITHUB_REPOSITORY'/actions/runs/'$GITHUB_RUN_ID')*)' | gh release edit -F - -R $GITHUB_REPOSITORY -- $resbucket
 
-    local -a prevarcs=( $( gh release view -R $GITHUB_REPOSITORY --json assets -- $resbucket | jq -r '.assets[].name' | glob $implementation.'*'.bsdzip | globv $implementation.$ts.'*'.bsdzip ) )
+    local -a prevarcs=( $( gh release view -R $GITHUB_REPOSITORY --json assets -- $resbucket | jq -r '.assets[].name' | glob $implementation.'*'.bsdzip | globv $implementation.$ts.'*'.bsdzip | globv '*'.atom.xml ) )
     if [[ ${#prevarcs} -gt 0 ]]; then
       local +x f; for f in $prevarcs; do
         gh release delete-asset -R $GITHUB_REPOSITORY -- $resbucket $f
@@ -169,6 +190,17 @@ commit-asset() {
     sleep 999
   }
   #cd ..
+}
+
+_invoke-rssgen() {
+  case "$resid" in
+    (b22-h5)
+      b22rss.zsh
+      ;;
+    (*)
+      return 1
+      ;;
+  esac
 }
 
 _invoke-onecomic() {
