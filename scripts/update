@@ -196,7 +196,7 @@ commit-asset() {
 
 _invoke-rssgen() {
   case "$resscheme" in
-    (b22-h5)
+    (b22-h5rss)
       b22rss.zsh
       ;;
     (*)
