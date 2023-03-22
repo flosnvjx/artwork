@@ -199,6 +199,9 @@ _invoke-rssgen() {
     (b22-h5rss)
       b22rss.zsh
       ;;
+    (kk-pchtmlrss)
+      kkrss.zsh
+      ;;
     (*)
       return 1
       ;;
