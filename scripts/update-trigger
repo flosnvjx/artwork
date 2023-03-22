@@ -42,6 +42,8 @@ trigger() {
          implementation=onecomic;;
        (weibo:*)
          implementation=gallery-dl;;
+       (*rss:*)
+         implementation=rssgen;;
        (*)
          implementation=cejs;;
      esac
