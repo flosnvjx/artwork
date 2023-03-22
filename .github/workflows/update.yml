@@ -40,7 +40,7 @@ on:
         options:
           - release-asset
         required: true
-concurrency: update
+concurrency: update.
 name: update()
 ## *name: ensure that there is no 'string' in expression
 run-name: update.${{ inputs.implementation }}(${{ inputs.resannot }}#${{ inputs.resid }})
