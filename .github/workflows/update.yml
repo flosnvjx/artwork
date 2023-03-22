@@ -28,6 +28,12 @@ on:
         required: true
       resannot:
         type: string
+      resseed:
+        type: choice
+        options:
+          - true
+          - false
+        default: false
       storage:
         type: choice
         default: 'release-asset'
@@ -44,6 +50,7 @@ defaults:
 env:
   resid: ${{ inputs.resid }}
   resannot: ${{ inputs.resannot }}
+  resseed: ${{ inputs.resseed }}
   implementation: ${{ inputs.implementation }}
   GH_TOKEN: ${{ github.token }}
 permissions:
