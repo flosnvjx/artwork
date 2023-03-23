@@ -183,6 +183,7 @@ commit-asset() {
     local -a prevarcs=( $( gh release view -R $GITHUB_REPOSITORY --json assets -- $resbucket | jq -r '.assets[].name' | glob $implementation.'*'.bsdzip | globv $implementation.$ts.'*'.bsdzip ) )
     if [[ ${#prevarcs} -gt 0 ]]; then
       local +x f; for f in $prevarcs; do
+        sleep 2
         gh release delete-asset -R $GITHUB_REPOSITORY -- $resbucket $f
       done
     fi
