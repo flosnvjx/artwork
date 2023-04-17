@@ -218,12 +218,15 @@ _invoke-onecomic() {
 }
 
 _invoke-gallery-dl() {
-  local +x url=$resid
+  local -a +x url=($resid)
   if [[ "$resscheme" == weibo ]]; then
     if [[ "$resid" == ?*/?* ]]; then
-      url="https://weibo.com/$resid"
+      url=("https://weibo.com/$resid")
+    elif [[ "$resid" =~ ^[0-9][0-9]*$ ]]; then
+      url=("https://weibo.com/u/$resid?tabtype="album)
     else
-      url="https://weibo.com/u/$resid?tabtype=album"
+      : unsupported pattern
+      return 4
     fi
   fi
 

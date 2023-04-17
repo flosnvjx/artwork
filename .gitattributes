@@ -1,1 +1,2 @@
 /mgutab diff=bsdcat
+/mgutab.d/?*-?* diff=bsdcat

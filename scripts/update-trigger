@@ -11,7 +11,13 @@ trigger() {
     weibo $((60*60*18*28))
     qq $((60*60*24*7*5))
   )
-  bsdcat mgutab | LC_ALL=C sort -u | shuf | grep -vEe '(^$|^#)' | tee /dev/fd/2 | while IFS=$'\t' read -r resschid resannot resperiod; do
+  function {
+    local +x f=
+    setopt extendedglob
+    for f in mgutab.d/?*-?*(.N) mgutab; do
+      bsdcat $f | LC_ALL=C sort -u | shuf | grep -vEe '(^$|^#)'
+    done
+  } | tee /dev/fd/2 | while IFS=$'\t' read -r resschid resannot resperiod; do
      function {
        setopt localoptions
        setopt rematchpcre
