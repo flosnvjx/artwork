@@ -15,9 +15,9 @@ trigger() {
     local +x f=
     setopt extendedglob
     for f in mgutab.d/?*-?*(.N) mgutab; do
-      bsdcat $f | LC_ALL=C sort -u | shuf | grep -vEe '(^$|^#)'
+      bsdcat $f | LC_ALL=C sort -u | shuf | grep -vEe '(^[ \t]*$|^#)'
     done
-  } | tee /dev/fd/2 | while IFS=$'\t' read -r resschid resannot resperiod; do
+  } | tee /dev/fd/2 | while IFS=$'\t' read -r resschid resannot resperiod rescomment; do
      function {
        setopt localoptions
        setopt rematchpcre
