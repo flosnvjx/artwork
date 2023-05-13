@@ -190,6 +190,7 @@ commit-asset() {
     fi
   } else {
     : md5meta unchanged.
+    printf '```\n%s\n%s\n%s\n```\n%s\n' 0 $ts $md5meta '(*[log](https://github.com/'$GITHUB_REPOSITORY'/actions/runs/'$GITHUB_RUN_ID')*)' | gh release edit -F - -R $GITHUB_REPOSITORY -- $resbucket
     cancel
     sleep 999
   }
