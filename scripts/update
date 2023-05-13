@@ -199,8 +199,10 @@ commit-asset() {
 
 _invoke-rssgen() {
   case "$resscheme" in
-    (b22-h5rss)
-      b22rss.zsh
+    (b22rss)
+      mangaseriesfeed.zsh syncdb::b22 cn kr
+      mangaseriesfeed.zsh gen:xml::b22 -mints "$(TZ=Asia/Shanghai date -d "$(date -d "$(date +%Y-%m-15) -7 month" +%Y-%m)-01" +%s)" -maxts "$(TZ=Asia/Shanghai date -d "$(date -d "$(date +%Y-%m-01) -1 day" +%F) 23:59:59" +%s)" cn kr
+      mangaseriesfeed.zsh get:nav-banner::b22 || :
       ;;
     (kk-pchtmlrss)
       kkrss.zsh
