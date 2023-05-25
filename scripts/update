@@ -72,6 +72,9 @@ set-resenv() {
     (txdm:?*|txac:?*|tx:?*|qqac:?*|acqq:?*)
       export resscheme=txdm
       ;;
+    (kkmh:?*)
+      export resscheme=kkmh
+      ;;
     (cw:?*|ComicWalker:?*|comicwalker:?*)
       export resscheme=cw
       ;;
@@ -257,7 +260,7 @@ _invoke-gallery-dl() {
 }
 
 _invoke-cejs() {
-  node ../implementation/comic.*/${${${${${resscheme:/nvcn/dongman}:/nvtw/webtoon}:/txdm/qq}:/cw/ComicWalker}:/b22/bilibili}.js ${resid} recheck=$(if [[ $resscheme == cw ]]; then echo true; else echo multi_parts_changed; fi) archive_images=false||return $?
+  node ../implementation/comic.*/${${${${${${resscheme:/nvcn/dongman}:/nvtw/webtoon}:/txdm/qq}:/cw/ComicWalker}:/b22/bilibili}:/kkmh/kuaikan}.js ${resid} recheck=$(if [[ $resscheme == cw ]]; then echo true; else echo multi_parts_changed; fi) archive_images=false||return $?
 }
 
 invoke() {
