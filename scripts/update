@@ -244,9 +244,9 @@ _invoke-gallery-dl() {
   find -mindepth 1 -type d -empty -delete
 
   if [[ "$resseed" == true ]]; then
-    timeout -s INT --foreground 3.8h gallery-dl -D $PWD -o 'directory=["{category}","{user[id]}"]' -f '{status[date]:%Y%m%d%H%M}.{status[mblogid]}#{num:>02}#{filename}.{extension}' --write-metadata --sleep-extractor 1.5-7 --no-part --chunk-size 16384k -R 9 -- $url || :
+    timeout -s INT --foreground 3.8h gallery-dl -D $PWD -o 'directory=["{category}","{user[id]}"]' -f '{status[date]:%Y%m%d%H%M}.{status[mblogid]}#{num:>02}#{filename}.{extension}' --write-metadata --sleep-extractor 1.5-7 --no-part --chunk-size 16384k -R 9 -v -- $url || :
   else
-    timeout -s INT --foreground 3.8h gallery-dl -D $PWD -o 'directory=["{category}","{user[id]}"]' -f '{status[date]:%Y%m%d%H%M}.{status[mblogid]}#{num:>02}#{filename}.{extension}' --write-metadata -T 20 --no-part --chunk-size 16384k -R 9 -- $url
+    timeout -s INT --foreground 3.8h gallery-dl -D $PWD -o 'directory=["{category}","{user[id]}"]' -f '{status[date]:%Y%m%d%H%M}.{status[mblogid]}#{num:>02}#{filename}.{extension}' --write-metadata -T 20 --no-part --chunk-size 16384k -R 9 -v -- $url
   fi
   if ! [[ $? == 0 || $? == 124 ]]; then
     return 1
