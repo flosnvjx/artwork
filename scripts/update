@@ -232,6 +232,8 @@ _invoke-gallery-dl() {
       url=("https://weibo.com/$resid")
     elif [[ "$resid" =~ ^[0-9][0-9]*$ ]]; then
       url=("https://weibo.com/u/$resid?tabtype="album)
+    elif [[ "$resid" =~ ^[0-9][0-9]*'##'$ ]]; then
+      url=("https://weibo.com/u/$resid?tabtype="article)
     else
       : unsupported pattern
       return 4
