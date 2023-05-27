@@ -203,13 +203,13 @@ commit-asset() {
 _invoke-rssgen() {
   case "$resscheme" in
     (b22rss)
-      mangaseriesfeed.zsh syncdb::b22 cn kr
-      mangaseriesfeed.zsh gen:xml::b22 -mints "$(TZ=Asia/Shanghai date -d "$(date -d "$(date +%Y-%m-15) -7 month" +%Y-%m)-01" +%s)" -maxts "$(TZ=Asia/Shanghai date -d "$(date -d "$(date +%Y-%m-01) -1 day" +%F) 23:59:59" +%s)" cn kr
+      mangaseriesfeed.zsh syncdb::b22 || return
+      mangaseriesfeed.zsh gen:xml::b22 -mints "$(TZ=Asia/Shanghai date -d "$(date -d "$(date +%Y-%m-15) -7 month" +%Y-%m)-01" +%s)" -maxts "$(TZ=Asia/Shanghai date -d "$(date -d "$(date +%Y-%m-01) -1 day" +%F) 23:59:59" +%s)" || return
       mangaseriesfeed.zsh get:nav-banner::b22 || :
       ;;
     (kkmhrss)
-      mangaseriesfeed.zsh syncdb::kkmh cn kr
-      mangaseriesfeed.zsh gen:xml::kkmh -mints "$(TZ=Asia/Shanghai date -d "$(date -d "$(date +%Y-%m-15) -7 month" +%Y-%m)-01" +%s)" -maxts "$(TZ=Asia/Shanghai date -d "$(date -d "$(date +%Y-%m-01) -1 day" +%F) 23:59:59" +%s)" cn kr
+      mangaseriesfeed.zsh syncdb::kkmh cn kr || return
+      mangaseriesfeed.zsh gen:xml::kkmh -mints "$(TZ=Asia/Shanghai date -d "$(date -d "$(date +%Y-%m-15) -7 month" +%Y-%m)-01" +%s)" -maxts "$(TZ=Asia/Shanghai date -d "$(date -d "$(date +%Y-%m-01) -1 day" +%F) 23:59:59" +%s)" cn kr || return
       mangaseriesfeed.zsh get:nav-banner::kkmh || :
       ;;
     (txdmrss)
@@ -226,7 +226,7 @@ _invoke-onecomic() {
 }
 
 _invoke-gallery-dl() {
-  local -a +x url=($resid) gdlopts=(-D $PWD -o 'directory=["{category}","{user[id]}"]' -f '{status[date]:%Y%m%d%H%M}.{status[mblogid]}#{num:>02}#{filename}.{extension}' --write-metadata -T 20 --no-part --chunk-size 16384k -R 9 -v)
+  local -a +x url=($resid) gdlopts=(-D $PWD -o 'directory=["{category}","{user[id]}"]' -f '{status[date]:%Y%m%d%H%M}.{status[mblogid]}#{num:>02}#{filename}.{extension}' --write-metadata -T 20 --no-part --chunk-size 16384k -R 9)
   if [[ "$resscheme" == weibo ]]; then
     if [[ "$resid" =~ [^/]*/[^/]* ]]; then
       url=("https://weibo.com/$resid")
