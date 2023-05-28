@@ -243,8 +243,10 @@ _invoke-gallery-dl() {
   find -mindepth 1 -type d -empty -delete
 
   local +x wurl=; for wurl in $url; do
-    if ! timeout -s INT --foreground 3.8h gallery-dl "${(@)gdlopts}" -- "$wurl"; then
-      [[ $? == (0|124) || "$wurl" == *'tabtype=article' ]] || return
+    if timeout -s INT --foreground 3.8h gallery-dl "${(@)gdlopts}" -- "$wurl"; then
+      :
+    else
+      [[ $? == 124 || "$wurl" == *'tabtype=article' ]] || return
     fi
   done
   find -type f -name '*.json' -not -name '*#01#*.json' -print0 | xargs -0r rm --
