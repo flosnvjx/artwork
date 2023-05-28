@@ -244,7 +244,7 @@ _invoke-gallery-dl() {
 
   local +x wurl=; for wurl in $url; do
     if ! timeout -s INT --foreground 3.8h gallery-dl "${(@)gdlopts}" -- "$wurl"; then
-      [[ $? == 124 || "$wurl" == *'tabtype=article' ]] || return
+      [[ $? == (0|124) || "$wurl" == *'tabtype=article' ]] || return
     fi
   done
   find -type f -name '*.json' -not -name '*#01#*.json' -print0 | xargs -0r rm --
