@@ -231,7 +231,7 @@ _invoke-gallery-dl() {
     if [[ "$resid" =~ [^/]*/[^/]* ]]; then
       url=("https://weibo.com/$resid")
     elif [[ "$resid" =~ ^[0-9][0-9]*$ ]]; then
-      url=("https://weibo.com/u/$resid?tabtype="album{,article})
+      url=("https://weibo.com/u/$resid?tabtype="{album,article})
       gdlopts+=(--filter "extension not in ('mp4', 'webm')")
     else
       true unsupported pattern
