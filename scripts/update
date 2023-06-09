@@ -227,8 +227,9 @@ _invoke-onecomic() {
 }
 
 _invoke-gallery-dl() {
-  local -a +x url=($resid) gdlopts=(-D $PWD -o 'directory=["{category}","{user[id]}"]' -f '{status[date]:%Y%m%d%H%M}.{status[mblogid]}#{num:>02}#{filename}.{extension}' --write-metadata -T 20 --no-part --chunk-size 16384k -R 9 -v)
+  local -a +x url=($resid) gdlopts=(-D $PWD -o 'directory=["{category}","{user[id]}"]' --write-metadata -T 20 --no-part --chunk-size 16384k -R 9 -v)
   if [[ "$resscheme" == weibo ]]; then
+    gdlopts+=(-f '{status[date]:%Y%m%d%H%M}.{status[mblogid]}#{num:>02}#{filename}.{extension}')
     if [[ "$resid" =~ [^/]*/[^/]* ]]; then
       url=("https://weibo.com/$resid")
     elif [[ "$resid" =~ ^[0-9][0-9]*$ ]]; then
@@ -237,6 +238,13 @@ _invoke-gallery-dl() {
     else
       true unsupported pattern
       return 4
+    fi
+  elif [[ "$resscheme" == bcy ]]; then
+    gdlopts+=(-f '{post[date]:%Y%m%d%H%M}.{post[id]}#{num:>02}#{id}:{filename}.{extension}')
+    if [[ "$resid" =~ ^[0-9][0-9]*$ ]]; then
+      url=("https://bcy.net/u/$resid")
+    else
+      false unsupported url $resid
     fi
   fi
 
@@ -247,7 +255,11 @@ _invoke-gallery-dl() {
     if timeout -s INT --foreground 3.8h gallery-dl "${(@)gdlopts}" -- "$wurl"; then
       :
     else
-      [[ $? == 124 || "$wurl" == *'tabtype=article' ]] || return
+      [[ $? == 124 || "$wurl" == *'tabtype=article' ]] || if [[ "$resseed" == true ]]; then
+      :
+      else
+        return 1
+      fi
     fi
   done
   find -type f -name '*.json' -not -name '*#01#*.json' -print0 | xargs -0r rm --
