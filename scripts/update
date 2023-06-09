@@ -227,7 +227,7 @@ _invoke-onecomic() {
 }
 
 _invoke-gallery-dl() {
-  local -a +x url=($resid) gdlopts=(-D $PWD -o 'directory=["{category}","{user[id]}"]' -f '{status[date]:%Y%m%d%H%M}.{status[mblogid]}#{num:>02}#{filename}.{extension}' --write-metadata -T 20 --no-part --chunk-size 16384k -R 9)
+  local -a +x url=($resid) gdlopts=(-D $PWD -o 'directory=["{category}","{user[id]}"]' -f '{status[date]:%Y%m%d%H%M}.{status[mblogid]}#{num:>02}#{filename}.{extension}' --write-metadata -T 20 --no-part --chunk-size 16384k -R 9 -v)
   if [[ "$resscheme" == weibo ]]; then
     if [[ "$resid" =~ [^/]*/[^/]* ]]; then
       url=("https://weibo.com/$resid")

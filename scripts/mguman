@@ -31,7 +31,7 @@ function add:item:url {
         [[ "$1" != */* ]]
         1=${${1%%'#'*}%%'?'*}
         [[ "$1" == <1-> ]]
-        gallery-dl -K 'https://weibo.com/u/'$1 | awk "/status\['user'\]\['screen_name'\]/ { PNR=NR+1; } PNR>0&&PNR==NR { sub(\"[ \t]+\", \"\", \$0); print \$0;}" | IFS= read -r annot
+        gallery-dl -K 'https://weibo.com/u/'$1'?tabtype=album' | awk "/status\['user'\]\['screen_name'\]/ { PNR=NR+1; } PNR>0&&PNR==NR { sub(\"[ \t]+\", \"\", \$0); print \$0;}" | IFS= read -r annot
         vared -e -p 'annot> ' annot
         annot=${annot//	}
         [[ $#annot -gt 0 ]]
