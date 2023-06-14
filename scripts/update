@@ -235,6 +235,9 @@ _invoke-gallery-dl() {
     elif [[ "$resid" =~ ^[0-9][0-9]*$ ]]; then
       url=("https://weibo.com/u/$resid?tabtype="{album,article})
       gdlopts+=(--filter "extension not in ('mp4', 'webm')")
+    elif [[ "$resid" =~ ^[0-9][0-9]*\.$ ]]; then
+      url=("https://weibo.com/u/${resid%.}?tabtype=feed")
+      gdlopts+=(--filter "extension not in ('mp4', 'webm') and 'retweeted_status' not in status")
     else
       true unsupported pattern
       return 4

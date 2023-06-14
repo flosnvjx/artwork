@@ -23,22 +23,37 @@ function add:item:url {
     local +x annot=
     local +x period=4m
     local +x comment=
+    local +x resscm= url=
     case "$1" {
       (https://m.weibo.cn/profile/?*|https://m.weibo.cn/u/?*|https://weibo.com/u/?*)
+      resscm=weibo
+      ;|
+      (https://www.bcy.net/u/?*|https://bcy.net/u/?*)
+      resscm=bcy
+      ;|
+      (https://m.weibo.cn/profile/?*|https://m.weibo.cn/u/?*|https://weibo.com/u/?*|https://www.bcy.net/u/?*|https://bcy.net/u/?*)
         repeat 4 {
           1=${1#*/}
         }
         [[ "$1" != */* ]]
         1=${${1%%'#'*}%%'?'*}
         [[ "$1" == <1-> ]]
-        gallery-dl -K 'https://weibo.com/u/'$1'?tabtype=album' | awk "/status\['user'\]\['screen_name'\]/ { PNR=NR+1; } PNR>0&&PNR==NR { sub(\"[ \t]+\", \"\", \$0); print \$0;}" | IFS= read -r annot
+        if [[ $resscm = bcy ]]; then
+          url='https://bcy.net/u/'$1
+          awkprog="/^user\['name'\]/ { PNR=NR+1; } PNR>0&&PNR==NR { sub(\"[ \t]+\", \"\", \$0); print \$0;}"
+        elif [[ $resscm = weibo ]]; then
+          url='https://weibo.com/u/'$1'?tabtype=album'
+          awkprog="/^status\['user'\]\['screen_name'\]/ { PNR=NR+1; } PNR>0&&PNR==NR { sub(\"[ \t]+\", \"\", \$0); print \$0;}"
+        else return 99
+        fi
+        gallery-dl -K $url | gawk -e $awkprog | IFS= read -r annot
         vared -e -p 'annot> ' annot
         annot=${annot//	}
         [[ $#annot -gt 0 ]]
         vared -e -p 'period(n[dwmy])> ' period
         [[ "$period" == <1->[dmwy] ]]
         vared -h -e -p 'comment> ' comment
-        add:item $getopts[-b] weibo:$1 $annot $period $comment
+        add:item $getopts[-b] $resscm:$1 $annot $period $comment
       ;;
     }
     shift
