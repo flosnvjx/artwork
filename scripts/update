@@ -249,6 +249,13 @@ _invoke-gallery-dl() {
     else
       false unsupported url $resid
     fi
+  elif [[ "$resscheme" == tumblr ]]; then
+    gdlopts+=(-f '{post[date]:%Y%m%d%H%M}.{post[id]}#{num:>02}#{id}:{filename}.{extension}')
+    if [[ "$resid" =~ ^[^/][^/]*$ ]]; then
+      url=("https://www.tumblr.com/blog/view/$resid")
+    else
+      false unsupported url $resid
+    fi
   fi
   if [[ "$resseed" != true ]]; then
     gdlopts+=(-T 20)
