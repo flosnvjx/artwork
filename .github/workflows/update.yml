@@ -20,6 +20,7 @@ on:
           - cejs
           - onecomic
           - gallery-dl
+          - yt-dlp
           - rssgen
         default: 'cejs'
         required: true
@@ -28,7 +29,7 @@ on:
         required: true
       resannot:
         type: string
-      resseed:
+      rescan:
         type: choice
         options:
           - true
@@ -50,7 +51,7 @@ defaults:
 env:
   resid: ${{ inputs.resid }}
   resannot: ${{ inputs.resannot }}
-  resseed: ${{ inputs.resseed }}
+  rescan: ${{ inputs.rescan }}
   implementation: ${{ inputs.implementation }}
   GH_TOKEN: ${{ github.token }}
 permissions:
@@ -80,7 +81,7 @@ jobs:
       - if: inputs.implementation == 'rssgen'
         run: |
           sudo apt update&&sudo apt install -qqq gojq libxml2-utils icu-devtools
-      - if: inputs.implementation == 'onecomic' || inputs.implementation == 'gallery-dl'
+      - if: inputs.implementation == 'onecomic' || inputs.implementation == 'gallery-dl' || inputs.implementation == 'yt-dlp'
         uses: actions/cache@v3
         with:
           path: |

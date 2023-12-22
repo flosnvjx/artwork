@@ -273,7 +273,7 @@ _invoke-gallery-dl() {
     gdlopts+=(-o 'directory=["{category}:{lang}","{title_no}:{comic}","{episode_no:>04}:{title}"]' -f '{num:>03}:{filename}.{extension}')
     url=("https://www.webtoons.com/zh-hant/$resid")
   fi
-  if [[ "$resseed" != true ]]; then
+  if [[ "$rescan" != true ]]; then
     gdlopts+=(-T 20)
   fi
 
@@ -284,7 +284,7 @@ _invoke-gallery-dl() {
     if timeout -s INT --foreground 3.8h gallery-dl "${(@)gdlopts}" -- "$wurl"; then
       :
     else
-      [[ $? == 124 || "$wurl" == *'tabtype=article' ]] || if [[ "$resseed" == true ]]; then
+      [[ $? == 124 || "$wurl" == *'tabtype=article' ]] || if [[ "$rescan" == true ]]; then
       :
       else
         return 1
