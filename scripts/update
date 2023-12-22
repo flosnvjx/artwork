@@ -20,6 +20,12 @@ setup-gallery-dl() {
   fi
 }
 
+setup-yt-dlp() {
+  if ! gallery-dl --version; then
+    pip install --user -U yt-dlp
+  fi
+}
+
 setup-cejs() {
   if [[ ! -d implementation ]] {
     git clone -qb flos --depth 1 --single-branch https://github.com/flosnvjx/work_crawler.git/ implementation
@@ -52,6 +58,7 @@ setup() {
     (cejs) setup-cejs;;
     (onecomic) setup-onecomic;;
     (gallery-dl) setup-gallery-dl;;
+    (yt-dlp) setup-yt-dlp;;
     (rssgen) setup-rssgen;;
     ("") setup-cejs
          print -r -- implementation=cejs >> $GITHUB_ENV
@@ -214,7 +221,7 @@ _invoke-rssgen() {
       mangaseriesfeed.zsh get:nav-banner::kkmh || :
       ;;
     (txdmrss)
-      txdmrss.zsh
+      txdm
       ;;
     (*)
       return 1
@@ -224,6 +231,12 @@ _invoke-rssgen() {
 
 _invoke-onecomic() {
   onecomic -s ${resscheme:/b22/bilibili} -id $resid --all -o ./||return $?
+}
+
+_invoke-yt-dlp() {
+  if [[ "$resscheme" == b23 ]]; then
+    yt-dlp -- https://www.bilibili.com/video/$resid||return $?
+  fi
 }
 
 _invoke-gallery-dl() {
