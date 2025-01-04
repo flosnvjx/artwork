@@ -103,7 +103,14 @@ jobs:
         run: update setup
       - run: update set-resenv
       - run: update checkout-asset
-      - env:
+      - if: inputs.implementation == 'yt-dlp'
+        env:
+          GH_TOKEN: 0
+          GITHUB_TOKEN: 0
+          COOKIEB64STRING: ${{ secrets.yt_dlp_cookies }}
+        run: update invoke
+      - if: inputs.implementation != 'yt-dlp'
+        env:
           GH_TOKEN: 0
           GITHUB_TOKEN: 0
         run: update invoke

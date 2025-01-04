@@ -86,8 +86,11 @@ set-resenv() {
     (cw:?*|ComicWalker:?*|comicwalker:?*)
       export resscheme=cw
       ;;
-    (b22:?*|b23:?*|bili:?*|bilibili:?*|bman:?*)
+    (b22:?*||bman:?*)
       export resscheme=b22
+      ;;
+    (b23:?*|bili:?*|bilibili:?*|bili2233:?*)
+      export resscheme=b23
       ;;
     (?*:?*)
       export resscheme=${resid%%:*}
@@ -235,7 +238,12 @@ _invoke-onecomic() {
 
 _invoke-yt-dlp() {
   if [[ "$resscheme" == b23 ]]; then
-    yt-dlp -- https://www.bilibili.com/video/$resid||return $?
+    yt-dlp --cookies <(printf %s $COOKIEB64STRING|base64 -d|bsdcat) --write-info-json --write-comments --sleep-requests 1 --write-subs --write-auto-subs --embed-thumbnail --embed-metadata --embed-chapters -o '%(uploader_id)s#%(id)s.%(modified_timestamp>%Y%m%d%H%M,timestamp>%Y%m%d%H%M,release_timestamp>%Y%m%d%H%M)s.%(title)+.60U.%(ext)s' --merge-output-format mp4 -- https://bilibili.com/BV$resid||return $?
+  #elif [[ "$resscheme" == blive ]]; then
+  #  yt-dlp --wait-for-video 10-180 --fragment-retries 3 --retry-sleep fragment:linear=1:8:2 --keep-fragments --no-mtime --write-info-json --no-part --no-cache-dir -k -- https://live.bilibili.com/$resid
+  else
+    printf %s "undefined resscheme: $resscheme" >/dev/fd/2
+    return 1
   fi
 }
 

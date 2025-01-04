@@ -1,0 +1,98 @@
+name: onecomic
+on:
+  workflow_dispatch:
+    inputs:
+      id:
+        required: true
+      title:
+        required: true
+      artist:
+
+defaults:
+  run:
+    shell: bash
+env:
+  resId: ${{ inputs.id }}
+  resTitle: ${{ inputs.title }}
+  resArtist: ${{ inputs.artist }}
+jobs:
+  aio:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          repository: 'lifegpc'
+          path: 'bili'
+          fetch-depth: 0
+      - name: apt()
+        run: sudo apt-get install -y cpio ffmpeg
+      - name: pip()
+        run: pip install -U --user onecomic
+      - name: python(onecomic, ${{ inputs.scheme }}/${{ inputs.id }})
+        run: |
+          python -m onecomic --site "$resScheme" --comicid "$resId" \
+                    ${resChaps:+--chapter} ${resChaps} \
+                    --worker "${resThreads:-1}" \
+                    --debug
+          timestamp="$(TZ=Asia/Shanghai date '+%F %T')"
+          echo timestamp=$timestamp >> $GITHUB_ENV
+      - name: bsdtar()
+        run: |
+          set -x
+          mkdir output
+          cd download
+          for dir in */*/; do
+            dirname="$(dirname -- "$dir")"
+            basename="$(basename -- "$dir")"
+            basetagname="$(printf '%s\n' "$basename" | sed -Ee 's|[/. ~^?*]|-|g;s|@|()|g;s%\[%(%g;s%\]%)%g' | sed -Ee 's%^-+%%')"
+              git pull --tags origin nci
+              if [[ "$(git tag --list -- "$basetagname" | wc -c)" == 0 ]]; then
+                echo requireCreateATag=1 >> $GITHUB_ENV
+              fi
+            echo basetagname=$basetagname >> $GITHUB_ENV
+            finalFilename="$basename [$resScheme.$resId]"
+            relsuf="-$resScheme.$resId"
+            if [[ -n "$resChaps" ]]; then
+              finalFilename+="[ch#$resChaps]"
+              relsuf+=".ch$resChaps"
+            fi
+            if [[ -n "$resRename" ]];then finalFilename="$resRename";fi
+            finalFilename="${finalFilename//\`/}"
+            cd ./"$dirname"
+          done
+          find . -type f -print0 | sed -ze 's%^\./%%' | \
+          LC_ALL=C sort -zt/ -k2,2 -k3g,3 | \
+          cpio -o0cC1R+0:+0 --reproducible --quiet | \
+          zstd --ultra -T0 -21 --zstd=strat=9,wlog=26,hlog=30,clog=30,slog=25,mml=7,tlen=128 -o ../../output/file.tzst
+          md5inhex="$(md5sum ../../output/file.tzst | sed -e 's%  .*%%')"
+          md5inb32="$(printf '%s\n' "$md5inhex" | xxd -ps -r | base32 -w0 | sed -Ee 's%=+$%%g;s%([A-Z])%\L&%g')"
+          mv -vT -- ../../output/{file,${md5inb32}${relsuf}}.tzst
+          echo md5inb32=$md5inb32 >> $GITHUB_ENV
+          echo finalFilename=$finalFilename >> $GITHUB_ENV
+          echo relsuf=$relsuf >> $GITHUB_ENV
+#      - name: upload.volatile()
+#        if: ${{ ! inputs.persist }}
+#        uses: actions/upload-artifact@v3
+#        with:
+#          path: output/${{ env.md5inb32 }}.tzst
+#          name: ${{ env.md5inb32 }}.tzst
+#          if-no-files-found: error
+      - name: create.tag(${{ env.basetagname }})
+#        if: ${{ inputs.persist && env.requireCreateATag == 1 }}
+        if: ${{ env.requireCreateATag == 1 }}
+        uses: rickstaa/action-create-tag@v1
+        with:
+          tag: ${{ env.basetagname }}
+          message:
+          commit_sha: stock
+      - name: upload.persist(${{ env.finalFilename }}, ${{ env.md5inb32 }})
+#        if: ${{ inputs.persist }}
+        uses: softprops/action-gh-release@v1
+        with:
+          prerelease: true
+          body: |
+            - [`${{ env.finalFilename }}`](${{ env.md5inb32 }}${{ env.relsuf }}.tzst) (${{ env.timestamp }})
+          append_body: true
+          files: output/${{ env.md5inb32 }}${{ env.relsuf }}.tzst
+          tag_name: ${{ env.basetagname }}
+          fail_on_unmatched_files: true
