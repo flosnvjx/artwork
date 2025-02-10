@@ -22,7 +22,8 @@ on:
           - gallery-dl
           - yt-dlp
           - rssgen
-        default: 'cejs'
+          - blr
+        default: 'yt-dlp'
         required: true
       resid:
         type: string
@@ -88,6 +89,12 @@ jobs:
             ~/.local/lib/python3.*
             ~/.local/bin
           key: implementation.${{ inputs.implementation }}
+      - if: inputs.implementation == 'blr'
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.local/opt
+          key: implementation.${{ inputs.implementation }}
       - uses: actions/checkout@v3
         with:
           path: repo
@@ -96,7 +103,7 @@ jobs:
           echo "$HOME/.local/bin" >> $GITHUB_PATH
           echo "$HOME/.scriptbase" >> $GITHUB_PATH
           echo "$GITHUB_WORKSPACE/repo/scripts" >> $GITHUB_PATH
-          sudo apt update&&sudo apt install -qqq zsh libarchive-tools trickle rdfind
+          sudo apt update&&sudo apt install -qqq zsh libarchive-tools rdfind
       - env:
           GH_TOKEN: 0
           GITHUB_TOKEN: 0

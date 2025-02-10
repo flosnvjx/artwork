@@ -15,14 +15,23 @@ setup-onecomic() {
 }
 
 setup-gallery-dl() {
-  if ! gallery-dl --version; then
-    pip install --user -U gallery-dl
-  fi
+  pip install --user -U gallery-dl
 }
 
 setup-yt-dlp() {
-  if ! gallery-dl --version; then
-    pip install --user -U yt-dlp
+  pip install --user -U yt-dlp
+}
+
+setup-blr() {
+  local REPLY
+  if (( $(date +%s) - $(stat -c %Y -- ~/.local/opt/blr/release-version.txt || printf %s -1) > 86400 )); then
+    curl -w '%{redirect_url}\n' https://github.com/BililiveRecorder/BililiveRecorder/releases/latest | IFS= read -r
+    if [[ "$REPLY" == https://github.com/BililiveRecorder/BililiveRecorder/releases/tag/v?* ]] && ! printf '%s\n' $REPLY | cmp -s - ~/.local/opt/blr/release-version.txt; then
+      rm -rf ~/.local/opt/blr || :
+      mkdir -p ~/.local/opt/blr
+      curl -qgfL ${REPLY%/?*/?*}/download/${REPLY##*/}/BililiveRecorder-CLI-linux-x64.zip | bsdtar -xf - -C ~/.local/opt/blr
+      printf '%s\n' $REPLY | tee ~/.local/opt/blr/release-version.txt
+    fi
   fi
 }
 
@@ -59,6 +68,7 @@ setup() {
     (onecomic) setup-onecomic;;
     (gallery-dl) setup-gallery-dl;;
     (yt-dlp) setup-yt-dlp;;
+    (blr) setup-blr;;
     (rssgen) setup-rssgen;;
     ("") setup-cejs
          print -r -- implementation=cejs >> $GITHUB_ENV
@@ -241,6 +251,19 @@ _invoke-yt-dlp() {
     yt-dlp --cookies <(printf %s $COOKIEB64STRING|base64 -d|bsdcat) --write-info-json --write-comments --sleep-requests 1 --write-subs --write-auto-subs --embed-thumbnail --embed-metadata --embed-chapters -o '%(uploader_id)s#%(id)s.%(modified_timestamp>%Y%m%d%H%M,timestamp>%Y%m%d%H%M,release_timestamp>%Y%m%d%H%M)s.%(title)+.60U.%(ext)s' --merge-output-format mp4 -- https://bilibili.com/BV$resid||return $?
   #elif [[ "$resscheme" == blive ]]; then
   #  yt-dlp --wait-for-video 10-180 --fragment-retries 3 --retry-sleep fragment:linear=1:8:2 --keep-fragments --no-mtime --write-info-json --no-part --no-cache-dir -k -- https://live.bilibili.com/$resid
+  else
+    printf %s "undefined resscheme: $resscheme" >/dev/fd/2
+    return 1
+  fi
+}
+
+_invoke-blr() {
+  if [[ "$resscheme" == b23l ]] && (( resid )); then
+    [[ -f config.json ]] || cat > config.json << EOFF
+{"version":3,"global":{"RecordMode":{"HasValue":true},"CuttingMode":{"HasValue":true,"Value":2},"CuttingNumber":{"HasValue":true,"Value":1990},"RecordDanmaku":{"HasValue":true,"Value":true},"RecordDanmakuRaw":{"HasValue":true},"RecordDanmakuSuperChat":{"HasValue":true,"Value":true},"RecordDanmakuGift":{"HasValue":true,"Value":true},"RecordDanmakuGuard":{"HasValue":true},"SaveStreamCover":{"HasValue":true},"FileNameRecordTemplate":{"HasValue":true,"Value":"{{ roomId }}.{{ \"now\" | format_date: \"yyyyMMddHHmm\" }}.{{ title }}.{{ areaChild }}"},"FlvProcessorSplitOnScriptTag":{"HasValue":true,"Value":true},"FlvWriteMetadata":{"HasValue":true,"Value":true},"NetworkTransportAllowedAddressFamily":{"HasValue":true,"Value":1}},"rooms":[{"RoomId":{"HasValue":true,"Value":$resid},"AutoRecord":{"HasValue":true,"Value":true}}]}
+EOFF
+    timeout -s INT --foreground 3.8h ~/.local/opt/blr/BililiveRecorder.Cli r .||return $?
+    rm config*.json
   else
     printf %s "undefined resscheme: $resscheme" >/dev/fd/2
     return 1
