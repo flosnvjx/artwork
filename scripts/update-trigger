@@ -47,7 +47,7 @@ trigger() {
      case "$resschid" in
        (b22:*|qq:*)
          implementation=onecomic;;
-       (weibo:*|bcy:?*|tumblr:?*)
+       (weibo:*|bcy:?*|tumblr:?*|nvtw:?*)
          implementation=gallery-dl;;
        (*rss:*)
          implementation=rssgen;;
